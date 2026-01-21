@@ -128,27 +128,18 @@ export function SidebarHistory({ user }: { user: User | null }) {
     deleteConversation,
   } = useConversationsContext();
   useEffect(() => {
-    if (!user) return;
-
+    // Demo mode - always use demo-user
+    const demoUserId = 'demo-user';
+    
     // initial load
-    fetchConversations(user.id);
+    fetchConversations(demoUserId);
 
 
-  }, [user, fetchConversations]);
+  }, [fetchConversations]);
   useEffect(() => {
     console.log("Conversations loaded:", conversations.length); // Debug log
   }, [conversations]);
-  if (!user) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupContent>
-          <div className="px-2 text-zinc-500 w-full flex flex-row justify-center items-center text-sm gap-2">
-            Login to save and revisit previous chats!
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
-  }
+
   if (!conversations || conversations.length === 0) {
     return (
       <SidebarGroup>

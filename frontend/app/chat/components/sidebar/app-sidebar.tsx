@@ -5,8 +5,8 @@ import Link from "next/link";
 import { PlusIcon } from "../icons";
 import { useConversationsContext } from "../../hooks/conversations-context";
 import { SidebarHistory } from "./sidebar-history";
-import Image from "next/image"
 import { Button } from "@/components/ui/button";
+import { Shield } from "lucide-react";
 
 import {
   Sidebar,
@@ -31,7 +31,6 @@ export function AppSidebar({ user }: AppSidebarProps) {
   const { setOpenMobile } = useSidebar();
   const { createConversation } = useConversationsContext();
   const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  const appIcon = process.env.NEXT_PUBLIC_APP_ICON!;
   
   // Demo mode - use demo user ID
   const demoUserId = "demo-user";
@@ -48,13 +47,9 @@ export function AppSidebar({ user }: AppSidebarProps) {
               }}
               className="flex flex-row gap-3 items-center"
             >
-              <Image
-                src={appIcon}
-                alt={appName}
-                width={40}
-                height={40}
-                className="h-10 w-10 rounded-md"
-                />
+              <div className="h-10 w-10 rounded-md bg-emerald-500/10 flex items-center justify-center">
+                <Shield className="h-6 w-6 text-emerald-500" />
+              </div>
               <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
                 {appName}
               </span>

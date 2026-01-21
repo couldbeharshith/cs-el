@@ -885,7 +885,7 @@ if __name__ == "__main__":
         port=port,
         workers=workers,
         limit_concurrency=limit_concurrency,
-        reload=debug_mode,
+        reload=True,
         access_log=debug_mode,
         log_level="info" if debug_mode else "warning",
     )

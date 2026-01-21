@@ -7,7 +7,7 @@ export const makeApiRequestTool = tool({
     url: z.string().describe('The URL to make the request to.'),
     method: z.enum(['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'HEAD', 'OPTIONS']).describe('The HTTP method to use.'),
     headers: z.record(z.string()).optional().describe('Optional headers to include in the request.'),
-    body: z.any().optional().describe('Optional body for the request (for POST, PUT, etc.). Can be a JSON object or string.'),
+    body: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional().describe('Optional body for the request (for POST, PUT, etc.). Must be a JSON object with key-value pairs.'),
   }),
   execute: async ({ url, method, headers, body }) => {
     try {
@@ -20,7 +20,7 @@ export const makeApiRequestTool = tool({
       };
 
       if (body && method !== 'GET' && method !== 'HEAD') {
-        options.body = typeof body === 'string' ? body : JSON.stringify(body);
+        options.body = JSON.stringify(body);
       }
 
       const response = await fetch(url, options);

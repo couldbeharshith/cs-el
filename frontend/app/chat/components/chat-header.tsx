@@ -37,7 +37,7 @@ function PureChatHeader({ chatId }: ChatHeaderProps) {
 
       <nav className="flex-1 flex items-center justify-center">
         {headerConfig.navigationLinks.map((link) => (
-          <Link href={link.href} key={link.href} className="px-2 py-1 hover:underline">
+          <Link href={link.href} key={link.href} className="px-2 py-1 hover:underline text-sm">
             {link.label}
           </Link>
         ))}

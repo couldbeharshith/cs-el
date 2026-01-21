@@ -18,7 +18,7 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import Avatar from "@/components/supaauth/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { createSupabaseBrowser } from "@/lib/supabase/client";
 export function NavProfile({ user }: { user: any }) {
   const router = useRouter();
@@ -44,7 +44,11 @@ export function NavProfile({ user }: { user: any }) {
                 },
               )}
             >
-              <Avatar />
+              <Avatar className="h-8 w-8">
+                <AvatarFallback>
+                  <User className="h-4 w-4" />
+                </AvatarFallback>
+              </Avatar>
               <div className="grid flex-1 text-left text-sm leading-tight">
                 <span className="truncate font-semibold">{user.email}</span>
                 <span className="truncate text-xs">{user.email}</span>

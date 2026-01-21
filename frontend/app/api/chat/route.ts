@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const demoUser = { id: 'demo-user', email: 'demo@example.com' };
 
     const { messages, data, selectedModel }: { messages: CoreMessage[], data: any, selectedModel: string } = await req.json();
-    const systemPrompt = await getSystemPrompt(demoUser);
+    const systemPrompt = await getSystemPrompt(demoUser, selectedModel);
     console.log(selectedModel);
 
     // Get MCP tools

@@ -11,7 +11,8 @@ from credentials import email, password
 url = "https://www.screener.in/login/"
 
 def login():
-    driver = uc.Chrome(headless=True, use_subprocess=False)
+    # Specify version_main to match your Chrome browser version (143)
+    driver = uc.Chrome(headless=True, use_subprocess=False, version_main=143)
     driver.get(url)
     time.sleep(3)
     driver.find_element(By.XPATH, '//*[@id="id_username"]').send_keys(email)
@@ -48,7 +49,8 @@ def login_with_network_capture():
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-blink-features=AutomationControlled')
     
-    driver = uc.Chrome(options=options, use_subprocess=False, headless=True)
+    # Specify version_main to match your Chrome browser version (143)
+    driver = uc.Chrome(options=options, use_subprocess=False, headless=True, version_main=143)
     driver.get(url)
     print("URL Fetched")
     time.sleep(3) 

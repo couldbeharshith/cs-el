@@ -30,21 +30,33 @@ const lmstudio = createOpenAI({
 
 
 export const models = [
-{ value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-{ value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
-{ value: 'gpt-4.1', label: 'GPT-4.1' },
-{ value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
-{ value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
-{ value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
-{ value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
-{ value: 'grok-3-mini', label: 'XAI Grok 3 Mini' },
-{ value: 'llama-3.3-70b-versatile', label: 'Groq Llama 3.3' },
-{ value: 'lmstudio-local', label: 'LM Studio (Local)' },
+  { value: 'local-llm1', label: 'Local LLM1' },
+  { value: 'local-llm2', label: 'Local LLM2' },
+  { value: 'local-llm3', label: 'Local LLM3' },
+];
 
+// Full model list (kept for future use, not shown in dropdown)
+export const allModels = [
+  { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
+  { value: 'gpt-4.1-mini', label: 'GPT-4.1 Mini' },
+  { value: 'gpt-4.1', label: 'GPT-4.1' },
+  { value: 'gemini-3-flash-preview', label: 'Gemini 3 Flash Preview' },
+  { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro' },
+  { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash' },
+  { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+  { value: 'grok-3-mini', label: 'XAI Grok 3 Mini' },
+  { value: 'llama-3.3-70b-versatile', label: 'Groq Llama 3.3' },
+  { value: 'lmstudio-local', label: 'LM Studio (Local)' },
 ];
 
 export const myProvider = customProvider({
 languageModels: {
+  // Active models (shown in dropdown) - all use gpt-5.2 with different prompts
+  'local-llm1': openai('gpt-5.2'),
+  'local-llm2': openai('gpt-5.2'),
+  'local-llm3': openai('gpt-5.2'),
+  
+  // Legacy models (kept for future use, not shown in dropdown)
   'gpt-4o-mini': openai('gpt-4o-mini'),
   'gpt-4.1-mini': openai('gpt-4.1-mini'),
   'gpt-4.1': openai('gpt-4.1'),

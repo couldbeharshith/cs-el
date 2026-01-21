@@ -6,7 +6,7 @@ import { MultimodalInput } from "./multimodal-input";
 import { ChatHeader } from "./chat-header";
 import { Message } from "ai";
 import { saveMessages } from "../actions";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { models } from "@/app/chat/lib/ai/providers/providers";
 
 interface ChatProps {
@@ -16,6 +16,12 @@ interface ChatProps {
 
 export function Chat({ id, initialMessages = [] }: ChatProps) {
   const [selectedModel, setSelectedModel] = useState(models[0].value);
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+  
   const { messages, input, setInput, handleInputChange, handleSubmit, status, data, append } = useChat({
     initialMessages,
     api: '/api/chat',
@@ -57,6 +63,10 @@ export function Chat({ id, initialMessages = [] }: ChatProps) {
     // Save message to DB in background
     saveMessages([userMessage], id);
   };
+
+  if (!isClient) {
+    return null; // Prevent hydration mismatch
+  }
 
   return (
     <div className="relative flex-1 flex flex-col h-full bg-background">

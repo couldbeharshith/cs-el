@@ -222,7 +222,7 @@ def accelerated_peers(request: CompanyRequest):
     driver = get_driver()
     find_concall = find_company_codes(company_name)
     company = find_concall.json()[0]
-    company_url = company.url
+    company_url = company['url']
     peers = get_peers(driver, company_url)
     return {"peers": peers}
 @app.post("/accelerated_profit_loss")
