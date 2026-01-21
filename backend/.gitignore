@@ -1,0 +1,7 @@
+__pycache__
+vector_store_cache/
+# .env
+notebooks
+venv
+results
+results_ignore

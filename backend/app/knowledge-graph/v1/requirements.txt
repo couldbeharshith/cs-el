@@ -1,0 +1,19 @@
+# Core dependencies
+python-dotenv>=1.0.0
+asyncio>=3.4.3
+requests
+
+# Azure Document Intelligence
+azure-ai-formrecognizer>=3.3.0
+azure-core>=1.29.0
+
+# OpenAI
+openai>=1.0.0
+
+# Neo4j and Graphiti
+neo4j>=5.0.0
+graphiti-core>=0.1.0
+
+# Additional utilities
+pathlib>=1.0.1
+dataclasses>=0.6
