@@ -13,6 +13,7 @@ FinSync AI is a financial research workspace for analyzing markets, screening co
 | [backend/rag_server](backend/rag_server) | Insurance document processing, vector search, reranking, and answer generation |
 | [backend/screener_server](backend/screener_server) | Screener.in integration and company data API |
 | [backend/scripts](backend/scripts) | Offline decision-tree and diagram utilities |
+| [backend/research](backend/research) | Knowledge-graph notebooks and policy ingestion prototypes |
 
 ## Run the web app
 

@@ -7,10 +7,11 @@ Preserve the existing chat workflows, API and MCP contracts, dashboard routes, a
 - `frontend/app` contains the Next.js routes. Chat presentation, state, prompts, providers, and tools live under `frontend/features/chat`. Keep provider credentials, database administration, and tool execution on the server.
 - `frontend/components` contains shared UI, navigation, and dashboard components. Reuse accessible primitives and the theme tokens in `app/globals.css`.
 - `frontend/lib/supabase` contains connection code, queries, and the application schema.
-- `backend/app` is the main FastAPI gateway and contains retrieval, vector-store, decision-tree, and knowledge-graph code.
+- `backend/app` is the main FastAPI gateway and contains retrieval, vector-store, and decision-tree code.
 - `backend/integrations` contains shared clients for upstream services.
 - `backend/mcp_server` contains separate RAG and Windows computer MCP entry points.
 - `backend/rag_server` and `backend/screener_server` have separate Python environments and settings. Start each from its own directory so its imports and configuration resolve correctly.
+- `backend/research` contains offline knowledge-graph notebooks and ingestion prototypes.
 - `backend/scripts` contains offline tooling. Keep scripts and research code usable independently of the web request path.
 
 ## Checks
