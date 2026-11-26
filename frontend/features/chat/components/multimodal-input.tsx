@@ -12,6 +12,7 @@ interface MultimodalInputProps {
   setInput: (value: string) => void;
   handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
   busy: boolean;
+  readOnly: boolean;
   responding: boolean;
   onStop: () => void;
   modelState: {
@@ -21,7 +22,7 @@ interface MultimodalInputProps {
 }
 
 export function MultimodalInput({
-  value, setInput, handleSubmit, busy, responding, onStop, modelState,
+  value, setInput, handleSubmit, busy, readOnly, responding, onStop, modelState,
 }: MultimodalInputProps) {
   const { isRecording, isProcessing, startRecording, stopRecording, error } = useVoiceRecorder({
     onTranscription: (text) => setInput(value ? `${value} ${text}` : text),
@@ -34,6 +35,7 @@ export function MultimodalInput({
         onChange={(event) => setInput(event.target.value)}
         placeholder="Ask a question or paste a document link…"
         aria-label="Message"
+        readOnly={readOnly}
         rows={2}
         className="block min-h-16 w-full resize-none bg-transparent px-4 pt-3 text-base outline-none placeholder:text-muted-foreground"
         onKeyDown={(event) => {

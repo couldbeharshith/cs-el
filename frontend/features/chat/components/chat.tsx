@@ -22,7 +22,8 @@ interface ChatProps {
 
 export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
   const [selectedModel, setSelectedModel] = useState<string>(models[0].value);
-  const [saving, setSaving] = useState(false);
+  const [savingMessage, setSavingMessage] = useState(false);
+  const [savingReply, setSavingReply] = useState(false);
   const sending = useRef(false);
   const [sendError, setSendError] = useState("");
   const [unsaved, setUnsaved] = useState<Message>();
@@ -36,51 +37,56 @@ export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
     api: "/api/chat",
     experimental_prepareRequestBody: ({ messages }) => ({ messages, selectedModel }),
     onFinish: async (message) => {
-      setSaving(true);
+      setSavingReply(true);
       try {
         await saveMessages([message], id);
         void refreshConversations();
       } catch {
         setUnsaved(message);
       } finally {
-        setSaving(false);
+        setSavingReply(false);
       }
     },
   });
 
   const responding = status === "submitted" || status === "streaming";
-  const busy = responding || saving;
+  const busy = responding || savingMessage || savingReply;
 
   async function send(content: string) {
     const text = content.trim();
     if (!text || busy || sending.current || unsaved) return;
     sending.current = true;
-    setSaving(true);
+    setSavingMessage(true);
     setSendError("");
     const message: Message = { id: crypto.randomUUID(), role: "user", content: text };
     try {
-      await saveMessages([message], id);
+      try {
+        await saveMessages([message], id);
+      } catch {
+        setSendError("Your message could not be saved. Try sending it again.");
+        return;
+      } finally {
+        setSavingMessage(false);
+      }
       setInput("");
       void refreshConversations();
-      setSaving(false);
       await append(message);
-    } catch {
-      setSendError("Your message could not be saved. Try sending it again.");
     } finally {
       sending.current = false;
-      setSaving(false);
     }
   }
 
   async function retrySave() {
-    if (!unsaved || saving) return;
-    setSaving(true);
+    if (!unsaved || savingReply) return;
+    setSavingReply(true);
     try {
       await saveMessages([unsaved], id);
       setUnsaved(undefined);
       void refreshConversations();
+    } catch {
+      setUnsaved(unsaved);
     } finally {
-      setSaving(false);
+      setSavingReply(false);
     }
   }
 
@@ -112,7 +118,7 @@ export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
             <div role="alert" className="mb-3 flex items-center gap-2 rounded-xl border border-destructive/25 bg-destructive/5 px-3 py-2 text-sm">
               <CircleAlert className="size-4 shrink-0 text-destructive" aria-hidden />
               <span className="flex-1">{sendError || (unsaved ? "This response hasn’t been saved to history." : formatChatError(error))}</span>
-              {unsaved ? <Button type="button" size="sm" variant="outline" disabled={saving} onClick={() => void retrySave().catch(() => {})}>Save again</Button> :
+              {unsaved ? <Button type="button" size="sm" variant="outline" disabled={savingReply} onClick={() => void retrySave()}>Save again</Button> :
                 error && !sendError && <Button type="button" size="sm" variant="outline" disabled={busy} onClick={() => void reload()}>Retry</Button>}
             </div>
           )}
@@ -121,6 +127,7 @@ export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
             setInput={setInput}
             handleSubmit={(event) => { event.preventDefault(); void send(input); }}
             busy={busy || Boolean(unsaved)}
+            readOnly={savingMessage}
             responding={responding}
             onStop={stop}
             modelState={{ selectedModel, setSelectedModel }}
