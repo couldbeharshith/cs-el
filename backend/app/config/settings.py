@@ -1,8 +1,7 @@
-from pydantic_settings import BaseSettings
+from pathlib import Path
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
-from dotenv import load_dotenv
 import os
-load_dotenv("../../.env")
 
 class Settings(BaseSettings):
     # API Configuration 
@@ -19,7 +18,7 @@ class Settings(BaseSettings):
     DEFAULT_LLM_PROVIDER: str = os.getenv("DEFAULT_LLM_PROVIDER", "openai")
     
     # OpenAI Configuration
-    OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY")
+    OPENAI_API_KEY: Optional[str] = os.getenv("OPENAI_API_KEY")
     OPENAI_MODEL: str = os.getenv("OPENAI_MODEL", "gpt-4.1-mini")
     
     # Gemini Configuration
@@ -43,9 +42,9 @@ class Settings(BaseSettings):
     AZURE_DOCUMENT_INTELLIGENCE_KEY: Optional[str] = os.getenv("AZURE_DOCUMENT_INTELLIGENCE_KEY")
 
     # Supabase Configuration
-    SUPABASE_URL: str = os.getenv("SUPABASE_URL")
-    SUPABASE_ANON_KEY: str = os.getenv("SUPABASE_ANON_KEY")
-    SUPABASE_SERVICE_KEY: str = os.getenv("SUPABASE_SERVICE_KEY")
+    SUPABASE_URL: Optional[str] = os.getenv("SUPABASE_URL")
+    SUPABASE_ANON_KEY: Optional[str] = os.getenv("SUPABASE_ANON_KEY")
+    SUPABASE_SERVICE_KEY: Optional[str] = os.getenv("SUPABASE_SERVICE_KEY")
     SUPABASE_TABLE_NAME: str = os.getenv("SUPABASE_TABLE_NAME", "documents")
     SUPABASE_QUERY_NAME: str = os.getenv("SUPABASE_QUERY_NAME", "match_documents")
     ENABLE_REQUEST_LOGGING: bool = os.getenv("ENABLE_REQUEST_LOGGING", "true").lower() == "true"
@@ -59,7 +58,8 @@ class Settings(BaseSettings):
     CACHE_MIN_CHUNKS: int = 0  # Only cache docs with >0 chunks
 
 
-    class Config:
-        env_file = ".env"
+    model_config = SettingsConfigDict(
+        env_file=Path(__file__).resolve().parents[2] / ".env", extra="ignore"
+    )
 
 settings = Settings()

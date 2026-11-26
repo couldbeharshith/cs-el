@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import List, Optional
 
 class Request(BaseModel):
@@ -7,7 +7,8 @@ class Request(BaseModel):
     k: Optional[int] = None  # None = dynamic k, int value = static k
     processing_mode: Optional[str] = "traditional"
     
-    @validator('processing_mode')
+    @field_validator("processing_mode")
+    @classmethod
     def validate_processing_mode(cls, v):
         from app.services.pipelines.pipeline_manager import PipelineManager
         

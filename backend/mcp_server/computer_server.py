@@ -16,7 +16,7 @@ try:
     import pyautogui
     pyautogui.FAILSAFE = False  # Disable fail-safe for smoother operation
     PYAUTOGUI_AVAILABLE = True
-except ImportError:
+except (ImportError, KeyError, OSError):
     PYAUTOGUI_AVAILABLE = False
     print("Warning: pyautogui not installed. Stream typing will not be available.")
     print("Install with: pip install pyautogui")

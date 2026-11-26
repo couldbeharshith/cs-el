@@ -1,230 +1,67 @@
-import { experimental_createMCPClient } from 'ai';
-import { StreamableHTTPClientTransport } from '@modelcontextprotocol/sdk/client/streamableHttp.js';
-import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { experimental_createMCPClient, type ToolSet } from "ai";
+import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
 
-// Simple MCP server configurations
 const MCP_SERVERS = {
-  // HTTP servers
-  computer: {
-    type: 'http' as const,
-    url: 'http://127.0.0.1:8002/mcp',
-    enabled: true,
-  },
-  rag: {
-    type: 'http' as const,
-    url: 'http://127.0.0.1:8000/mcp',
-    enabled: true,
-  },
-  playwright: {
-    type: 'http' as const,
-    url: 'http://localhost:8001/mcp',
-    enabled: false,
-  },
+  rag: process.env.RAG_MCP_URL ?? process.env.NEXT_PUBLIC_MCP_URL ?? "http://127.0.0.1:8001/mcp",
+  computer: process.env.COMPUTER_MCP_URL ?? "http://127.0.0.1:8002/mcp",
+};
 
-  // Stdio server (Not needed because we have HTTP Playwright above, but here for reference)
-  playwright_stdio: {
-    type: 'stdio' as const,
-    command: 'cmd',
-    args: [
-      '/c',
-      'npx',
-      '-y',
-      '@smithery/cli@latest',
-      'run',
-      '@microsoft/playwright-mcp',
-      '--key',
-      'c7eefd65-fbfe-405c-b071-f54ad4165201'
-    ],
-    enabled: false,  // Disabled - causing errors
-  },
-  
-} as const;
+type Client = Awaited<ReturnType<typeof experimental_createMCPClient>>;
+interface ToolConnection {
+  client: Client;
+  tools: ToolSet;
+}
 
-type MCPServerName = keyof typeof MCP_SERVERS;
+const connections = new Map<string, Promise<ToolConnection | null>>();
+const retryAfter = new Map<string, number>();
 
-// Simple cache for clients and tools
-const clientCache = new Map<string, any>();
-const toolsCache = new Map<string, Record<string, any>>();
-
-export async function getMCPClient(serverName: MCPServerName) {
-  const cacheKey = serverName;
-  
-  if (clientCache.has(cacheKey)) {
-    return clientCache.get(cacheKey);
-  }
-
+async function connect(name: string, url: string): Promise<ToolConnection | null> {
+  let transport: StreamableHTTPClientTransport | undefined;
+  let client: Client | undefined;
+  let timer: ReturnType<typeof setTimeout> | undefined;
   try {
-    const serverConfig = MCP_SERVERS[serverName];
-    
-    if (!serverConfig.enabled) {
-      return null;
-    }
-
-    let transport;
-    // Cast to any to avoid TS narrowing based on the 'enabled' property's current values
-    const config = serverConfig as any;
-
-    if (config.type === 'http') {
-      transport = new StreamableHTTPClientTransport(new URL(config.url));
-    } else if (config.type === 'stdio') {
-      transport = new StdioClientTransport({
-        command: config.command,
-        args: [...config.args],
-      });
-    } else {
-      throw new Error(`Unknown transport type for ${serverName}`);
-    }
-
-    const client = await experimental_createMCPClient({ transport });
-    
-    clientCache.set(cacheKey, client);
-    return client;
+    transport = new StreamableHTTPClientTransport(new URL(url));
+    const activeTransport = transport;
+    const setup = async () => {
+      const connected = await experimental_createMCPClient({ transport: activeTransport });
+      client = connected;
+      return { client: connected, tools: await connected.tools() };
+    };
+    return await Promise.race([
+      setup(),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(new Error("Discovery timed out")), 1_500);
+      }),
+    ]);
   } catch (error) {
-    console.error(`Failed to create MCP client for ${serverName}:`, error);
+    console.warn(`MCP server ${name} unavailable`, error instanceof Error ? error.message : error);
+    retryAfter.set(name, Date.now() + 15_000);
+    if (client) await client.close().catch(() => {});
+    else await transport?.close().catch(() => {});
     return null;
+  } finally {
+    clearTimeout(timer);
   }
 }
 
-export async function getMCPTools(serverName: MCPServerName) {
-  const cacheKey = serverName;
-  
-  if (toolsCache.has(cacheKey)) {
-    return toolsCache.get(cacheKey);
+async function getTools(name: string, url: string): Promise<ToolSet> {
+  if (!url || (retryAfter.get(name) ?? 0) > Date.now()) return {};
+
+  let pending = connections.get(name);
+  if (!pending) {
+    pending = connect(name, url);
+    connections.set(name, pending);
   }
 
-  try {
-    const client = await getMCPClient(serverName);
-    if (!client) return {};
-    
-    const tools = await client.tools();
-    toolsCache.set(cacheKey, tools);
-    return tools;
-  } catch (error) {
-    console.error(`Failed to get MCP tools for ${serverName}:`, error);
-    return {};
-  }
+  const connection = await pending;
+  if (!connection && connections.get(name) === pending) connections.delete(name);
+  return connection?.tools ?? {};
 }
 
-export async function getAllMCPTools() {
-  const allTools: Record<string, any> = {};
-  
-  // Clear cache to ensure fresh tools with fixes
-  toolsCache.clear();
-  
-  for (const serverName of Object.keys(MCP_SERVERS) as MCPServerName[]) {
-    // Skip disabled servers
-    if (!MCP_SERVERS[serverName].enabled) {
-      continue;
-    }
-
-    try {
-      const tools = await getMCPTools(serverName);
-      
-      // Prefix tool names with server name to avoid conflicts
-      for (const [toolName, tool] of Object.entries(tools)) {
-        const prefixedName = `${serverName}_${toolName}`;
-    
-        
-        // Fix schema for GPT-5.2 compatibility
-        fixToolSchemaForGPT5(tool, prefixedName);
-        
-        allTools[prefixedName] = tool;
-      }
-    } catch (error) {
-      console.warn(`Failed to load tools from ${serverName}:`, error);
-    }
-  }
-  
-  return allTools;
-}
-
-// Fix tool schemas to be compatible with GPT-5.2's strict requirements
-function fixToolSchemaForGPT5(tool: any, toolName: string): void {
-  if (!tool) {
-    return;
-  }
-  
-  // Handle both direct parameters and nested structure
-  let params = tool.parameters;
-  
-  // If parameters is nested under inputSchema or similar
-  if (!params && tool.inputSchema) {
-    params = tool.inputSchema;
-    tool.parameters = params;
-  }
-  
-  if (!params) {
-    return;
-  }
-  
-  // MCP tools have schema nested under jsonSchema property
-  let schema = params.jsonSchema || params;
-  
-  // Ensure all properties are in the required array
-  if (schema.properties && typeof schema.properties === 'object') {
-    const allPropertyKeys = Object.keys(schema.properties);
-    
-    // If required array doesn't exist or is incomplete, fix it
-    if (!schema.required || !Array.isArray(schema.required)) {
-      schema.required = allPropertyKeys;
-      console.log(`Fixed required array for ${toolName}:`, allPropertyKeys);
-    } else {
-      // Add any missing properties to required array
-      const missingKeys = allPropertyKeys.filter(key => !schema.required.includes(key));
-      if (missingKeys.length > 0) {
-        schema.required = [...schema.required, ...missingKeys];
-        console.log(`Added missing required keys for ${toolName}:`, missingKeys);
-      }
-    }
-    
-    // Recursively fix nested schemas
-    for (const [key, value] of Object.entries(schema.properties)) {
-      if (value && typeof value === 'object') {
-        fixNestedSchemaInPlace(value as any);
-      }
-    }
-  }
-}
-
-// Fix nested schemas recursively (in-place mutation)
-function fixNestedSchemaInPlace(schema: any): void {
-  if (!schema || typeof schema !== 'object') {
-    return;
-  }
-  
-  // Fix type for any/unknown types
-  if (!schema.type) {
-    schema.type = 'string'; // Default to string if no type specified
-  }
-  
-  // Fix nested objects
-  if (schema.type === 'object' && schema.properties) {
-    const allPropertyKeys = Object.keys(schema.properties);
-    if (!schema.required || !Array.isArray(schema.required)) {
-      schema.required = allPropertyKeys;
-    } else {
-      const missingKeys = allPropertyKeys.filter((key: string) => !schema.required.includes(key));
-      if (missingKeys.length > 0) {
-        schema.required = [...schema.required, ...missingKeys];
-      }
-    }
-    
-    // Recursively fix nested properties
-    for (const value of Object.values(schema.properties)) {
-      if (value && typeof value === 'object') {
-        fixNestedSchemaInPlace(value as any);
-      }
-    }
-  }
-  
-  // Fix arrays
-  if (schema.type === 'array' && schema.items) {
-    fixNestedSchemaInPlace(schema.items);
-  }
-}
-
-export function getAvailableServers(): MCPServerName[] {
-  return (Object.keys(MCP_SERVERS) as MCPServerName[]).filter(
-    (name) => MCP_SERVERS[name].enabled
-  );
+export async function getAllMCPTools(): Promise<ToolSet> {
+  const sets = await Promise.all(Object.entries(MCP_SERVERS).map(async ([name, url]) => {
+    const tools = await getTools(name, url);
+    return Object.entries(tools).map(([key, tool]) => [`${name}_${key}`, tool] as const);
+  }));
+  return Object.fromEntries(sets.flat());
 }

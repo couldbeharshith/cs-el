@@ -1,6 +1,4 @@
 from typing import List, Tuple, Dict, Any, Optional
-from app.services.pipelines.traditional_rag import traditional_rag
-from app.services.pipelines.structure_aware_rag import structure_aware_rag
 
 class PipelineManager:
     """
@@ -13,10 +11,7 @@ class PipelineManager:
     }
     
     # Pipeline execution mapping - makes it easy to add new pipelines
-    PIPELINE_EXECUTORS = {
-        "traditional": traditional_rag,
-        "structure_aware": structure_aware_rag,
-    }
+    PIPELINE_EXECUTORS = {}
     
     @classmethod
     def is_supported_pipeline(cls, pipeline_type: str) -> bool:
@@ -78,7 +73,14 @@ class PipelineManager:
             retrieval_service = traditional_retrieval_service
         
         # Get and execute the pipeline
-        pipeline_executor = cls.PIPELINE_EXECUTORS[pipeline_type]
+        pipeline_executor = cls.PIPELINE_EXECUTORS.get(pipeline_type)
+        if pipeline_executor is None:
+            if pipeline_type == "structure_aware":
+                from app.services.pipelines.structure_aware_rag import structure_aware_rag
+                pipeline_executor = structure_aware_rag
+            else:
+                from app.services.pipelines.traditional_rag import traditional_rag
+                pipeline_executor = traditional_rag
         return await pipeline_executor(
             document_id=document_id,
             document_url=document_url,
