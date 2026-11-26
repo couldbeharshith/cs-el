@@ -1,27 +1,17 @@
-import { createSupabaseServer } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { generateUUID } from "./lib/utils/generate-uuid";
+import { createConversationServer } from "@/lib/supabase/queries/server/conversations";
+import { getUser } from "./hooks/get-user";
 
-export default async function NewChatPage() {
-  // Auth removed - demo mode only
-  const demoUserId = "demo-user";
-  const supabase = await createSupabaseServer();
+export const dynamic = "force-dynamic";
 
-  // Create a new conversation
-  const { data: conversation } = await supabase
-    .from("conversations")
-    .insert({
-      id: generateUUID(),
-      title: "New Chat",
-      user_id: demoUserId,
-    })
-    .select()
-    .single();
-    
-  if (!conversation) {
-    throw new Error("Failed to create conversation");
-  }
-
-  // Redirect to the new conversation
-  return redirect(`/chat/${conversation.id}`);
+export default async function NewChatPage({ searchParams }: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { id } = await getUser();
+  const { q } = await searchParams;
+  const conversation = await createConversationServer(id);
+  const query = typeof q === "string" && q.trim()
+    ? `?${new URLSearchParams({ q: q.trim().slice(0, 4000) })}`
+    : "";
+  redirect(`/chat/${conversation.id}${query}`);
 }

@@ -17,20 +17,12 @@ import {
   ChartTooltipContent,
 } from "@/components/ui/chart"
 
-const generateChartData = (startValue: number, points: number, trend: "up" | "down") => {
-  let currentValue = startValue
-  const data = []
-  for (let i = 0; i < points; i++) {
-    // Increase volatility: using 0.4% daily volatility approximation for intraday
-    const volatility = startValue * 0.001 
-    const change = (Math.random() - 0.5) * volatility + (trend === "up" ? startValue * 0.0001 : -startValue * 0.0001)
-    currentValue += change
-    data.push({
-      time: i,
-      value: currentValue,
-    })
-  }
-  return data
+function sampleSeries(start: number, end: number) {
+  return Array.from({ length: 40 }, (_, time) => {
+    const progress = time / 39;
+    const variation = Math.sin(progress * Math.PI) * Math.sin(time * 1.4) * start * 0.00025;
+    return { time, value: start + (end - start) * progress + variation };
+  });
 }
 
 const marketData = [
@@ -41,7 +33,7 @@ const marketData = [
     change: "-12.6",
     changePercent: "0.05%",
     trend: "down" as const,
-    data: generateChartData(26215, 50, "down"),
+    data: sampleSeries(26215.55, 26202.95),
     color: "hsl(0, 84%, 60%)", // Red
   },
   {
@@ -51,7 +43,7 @@ const marketData = [
     change: "-13.71",
     changePercent: "0.02%",
     trend: "down" as const,
-    data: generateChartData(85720, 50, "down"),
+    data: sampleSeries(85720.38, 85706.67),
     color: "hsl(0, 84%, 60%)",
   },
   {
@@ -61,7 +53,7 @@ const marketData = [
     change: "+15.4",
     changePercent: "0.03%",
     trend: "up" as const,
-    data: generateChartData(59730, 50, "up"),
+    data: sampleSeries(59737.30, 59752.7),
     color: "hsl(173, 58%, 39%)", // Teal/Green
   },
   {
@@ -71,7 +63,7 @@ const marketData = [
     change: "-346.26",
     changePercent: "0.38%",
     trend: "down" as const,
-    data: generateChartData(91300, 50, "down"),
+    data: sampleSeries(91305.56, 90959.30),
     color: "hsl(0, 84%, 60%)",
   },
 ]
@@ -84,7 +76,7 @@ const chartConfig = {
 
 export function MarketOverviewCharts() {
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {marketData.map((market) => (
         <Card key={market.name} className="flex flex-col justify-between overflow-hidden bg-card/50 border-border/50 backdrop-blur-sm hover:bg-card/80 transition-colors">
           <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 px-4 pt-4">
@@ -98,7 +90,7 @@ export function MarketOverviewCharts() {
             </div>
             <div
               className={`flex flex-col items-end text-xs font-medium ${
-                market.trend === "up" ? "text-emerald-400" : "text-rose-400"
+                market.trend === "up" ? "text-emerald-700 dark:text-emerald-400" : "text-rose-700 dark:text-rose-400"
               }`}
             >
               <div className="flex items-center bg-background/20 px-1.5 py-0.5 rounded text-xs">
@@ -114,10 +106,10 @@ export function MarketOverviewCharts() {
                 <span className="text-xl font-bold tracking-tight">{market.value}</span>
              </div>
             <div className="h-[60px] w-full">
-              <ChartContainer config={chartConfig} className="h-full w-full">
+              <ChartContainer config={chartConfig} className="h-full w-full min-w-0">
                 <AreaChart data={market.data} margin={{ top: 5, right: 0, bottom: 0, left: 0 }}>
                   <defs>
-                    <linearGradient id={`fill-${market.name}`} x1="0" y1="0" x2="0" y2="1">
+                    <linearGradient id={`fill-${market.name.replaceAll(/[^a-z0-9]/gi, "")}`} x1="0" y1="0" x2="0" y2="1">
                       <stop
                         offset="0%"
                         stopColor={market.color}
@@ -139,7 +131,7 @@ export function MarketOverviewCharts() {
                     dataKey="value"
                     type="monotone"
                     stroke={market.color}
-                    fill={`url(#fill-${market.name})`}
+                    fill={`url(#fill-${market.name.replaceAll(/[^a-z0-9]/gi, "")})`}
                     strokeWidth={2}
                     dot={false}
                     isAnimationActive={false}

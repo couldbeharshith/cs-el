@@ -2,7 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import Exa from 'exa-js';
 
-const exa = new Exa(process.env.EXA_API_KEY);
+
 
 export const exaSearchTool = tool({
   description: 'Search the web using Exa AI for up-to-date information, news, and research.',
@@ -11,6 +11,7 @@ export const exaSearchTool = tool({
   }),
   execute: async ({ query }) => {
     try {
+      const exa = new Exa(process.env.EXA_API_KEY);
       const searchResult = await exa.searchAndContents(query, {
         numResults: 5,
         text: true,

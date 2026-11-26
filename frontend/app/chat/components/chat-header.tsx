@@ -1,53 +1,24 @@
 "use client";
 
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { LayoutDashboard, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSidebar } from "@/components/ui/sidebar";
-import { headerConfig } from "@/lib/config/header";
-import { PanelLeft } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { ModeToggle } from "@/components/global/theme-switcher";
-import { memo } from "react";
-import Link from "next/link";
 
-interface ChatHeaderProps {
-  chatId: string;
-}
-
-function PureChatHeader({ chatId }: ChatHeaderProps) {
-  const router = useRouter();
+export function ChatHeader({ title }: { title: string }) {
   const { toggleSidebar } = useSidebar();
 
   return (
-    <header className="flex items-center p-4 border-b">
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          className=""
-          onClick={() => toggleSidebar()}
-        >
-          <PanelLeft className="h-5 w-5" />
-        </Button>
-      </div>
-
-      <nav className="flex-1 flex items-center justify-center">
-        {headerConfig.navigationLinks.map((link) => (
-          <Link href={link.href} key={link.href} className="px-2 py-1 hover:underline text-sm">
-            {link.label}
-          </Link>
-        ))}
-      </nav>
-
-      <div className="flex items-center">
-        <ModeToggle />
-      </div>
+    <header className="flex h-16 shrink-0 items-center gap-2 border-b px-3 sm:gap-3 sm:px-6">
+      <Button type="button" variant="ghost" size="icon" onClick={toggleSidebar} aria-label="Toggle chat history">
+        <PanelLeft />
+      </Button>
+      <span className="min-w-0 flex-1 truncate text-sm font-semibold" title={title}>{title}</span>
+      <Button variant="ghost" asChild>
+        <Link href="/dashboard"><LayoutDashboard /><span className="hidden sm:inline">Dashboard</span><span className="sr-only sm:hidden">Dashboard</span></Link>
+      </Button>
+      <ModeToggle />
     </header>
   );
 }
-
-export const ChatHeader = memo(PureChatHeader);

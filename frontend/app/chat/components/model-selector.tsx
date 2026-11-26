@@ -45,7 +45,7 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
             variant="ghost"
             role="combobox"
             aria-expanded={open}
-            className="w-[200px] justify-between text-muted-foreground hover:text-foreground"
+            className="w-auto justify-between text-muted-foreground hover:text-foreground"
           >
             {selectedModelLabel}
             <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -84,12 +84,12 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button variant="ghost" className="w-[200px] justify-between text-muted-foreground hover:text-foreground">
+        <Button variant="ghost" className="w-auto justify-between text-muted-foreground hover:text-foreground">
           {selectedModelLabel}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent aria-label="Choose a chat profile">
         <div className="mt-4 border-t">
           <Command>
             <CommandInput placeholder="Search model..." />

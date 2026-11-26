@@ -1,76 +1,67 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from "react";
 import {
   createConversationBrowser,
   fetchConversationsBrowser,
   renameConversationBrowser,
   deleteConversationBrowser,
-} from '@/lib/supabase/queries/client/conversations';
-import { createSupabaseBrowser } from '@/lib/supabase/client';
-import { Conversation } from '@/app/chat/types';
-import { toast } from 'sonner';
+} from "@/lib/supabase/queries/client/conversations";
+import type { Conversation } from "../types";
+import { toast } from "sonner";
 
-export function useConversations() {
-  const supabase = createSupabaseBrowser();
+export function useConversations(userId: string) {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [historyState, setHistoryState] = useState<"loading" | "ready" | "error">("loading");
+  const request = useRef(0);
 
-  /* CRUD helpers ---------------------------------------------------------- */
-  const fetchConversations = useCallback(async (userId: string) => {
+  const refreshConversations = useCallback(async () => {
+    const version = ++request.current;
     try {
-      setConversations(await fetchConversationsBrowser(userId));
-    } catch (e) {
-      toast.error('Failed to fetch conversations');
-      console.error(e);
+      const rows = await fetchConversationsBrowser(userId);
+      if (request.current !== version) return;
+      setConversations(rows);
+      setHistoryState("ready");
+    } catch (error) {
+      if (request.current !== version) return;
+      console.error("Could not load chat history", error);
+      setHistoryState("error");
     }
-  }, []);
+  }, [userId]);
 
-  const createConversation = useCallback(
-    async (userId: string, title: string) => {
-      try {
-        const data = await createConversationBrowser(userId, title);
-        setConversations(prev => [data, ...prev]);           // optimistic
-        return data;
-      } catch (e) {
-        toast.error('Failed to create conversation');
-        console.error(e);
-        return null;
-      }
-    },
-    []
-  );
+  const createConversation = useCallback(async () => {
+    try {
+      const row = await createConversationBrowser(userId);
+      setConversations((previous) => [row, ...previous.filter(({ id }) => id !== row.id)]);
+      void refreshConversations();
+      return row;
+    } catch {
+      toast.error("Could not create a chat.");
+      return null;
+    }
+  }, [userId, refreshConversations]);
 
-  const renameConversation = useCallback(
-    async (conversationId: string, title: string) => {
-      try {
-        await renameConversationBrowser(conversationId, title);
-        setConversations(prev =>
-          prev.map(c => (c.id === conversationId ? { ...c, title } : c))
-        );
-      } catch (e) {
-        toast.error('Failed to rename conversation');
-        console.error(e);
-      }
-    },
-    []
-  );
+  const renameConversation = useCallback(async (id: string, title: string) => {
+    try {
+      await renameConversationBrowser(id, title);
+      setConversations((previous) => previous.map((row) => row.id === id ? { ...row, title } : row));
+      void refreshConversations();
+      return true;
+    } catch {
+      toast.error("Could not rename the chat.");
+      return false;
+    }
+  }, [refreshConversations]);
 
-  const deleteConversation = useCallback(
-    async (conversationId: string) => {
-      try {
-        await deleteConversationBrowser(conversationId);
-        setConversations(prev => prev.filter(c => c.id !== conversationId));
-      } catch (e) {
-        toast.error('Failed to delete conversation');
-        console.error(e);
-      }
-    },
-    []
-  );
+  const deleteConversation = useCallback(async (id: string) => {
+    try {
+      await deleteConversationBrowser(id);
+      setConversations((previous) => previous.filter((row) => row.id !== id));
+      void refreshConversations();
+      return true;
+    } catch {
+      toast.error("Could not delete the chat.");
+      return false;
+    }
+  }, [refreshConversations]);
 
-  return {
-    conversations,
-    fetchConversations,
-    createConversation,
-    renameConversation,
-    deleteConversation,
-  } as const;
+  return { conversations, historyState, refreshConversations, createConversation, renameConversation, deleteConversation };
 }

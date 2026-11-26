@@ -9,6 +9,7 @@ import { createGroq } from "@ai-sdk/groq";
 
 const openai = createOpenAI({
   apiKey: process.env.OPENAI_API_KEY,
+  baseURL: process.env.OPENAI_BASE_URL || undefined,
 });
 
 const google = createGoogleGenerativeAI({
@@ -28,12 +29,6 @@ const lmstudio = createOpenAI({
   baseURL: process.env.LMSTUDIO_BASE_URL || 'http://localhost:1234/v1',
 });
 
-
-export const models = [
-  { value: 'local-llm1', label: 'Local LLM1' },
-  { value: 'local-llm2', label: 'Local LLM2' },
-  { value: 'local-llm3', label: 'Local LLM3' },
-];
 
 // Full model list (kept for future use, not shown in dropdown)
 export const allModels = [

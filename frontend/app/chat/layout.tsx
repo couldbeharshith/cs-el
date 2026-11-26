@@ -1,23 +1,14 @@
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { ConversationsProvider } from "./hooks/conversations-context";
 import { AppSidebar } from "./components/sidebar/app-sidebar";
 
-export default async function ChatLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  // Auth removed - demo mode only
-  const demoUserId = "demo-user";
-  
+export default function ChatLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex h-screen">
-      <ConversationsProvider userId={demoUserId}>
-        <SidebarProvider defaultOpen={true}>
-          <AppSidebar user={null} />
-          <div className="flex-1 ">{children}</div>
-        </SidebarProvider>
-      </ConversationsProvider>
-    </div>
+    <ConversationsProvider userId="demo-user">
+      <SidebarProvider className="h-dvh overflow-hidden">
+        <AppSidebar />
+        <div className="h-full min-w-0 flex-1">{children}</div>
+      </SidebarProvider>
+    </ConversationsProvider>
   );
 }

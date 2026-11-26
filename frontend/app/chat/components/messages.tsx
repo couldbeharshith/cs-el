@@ -1,53 +1,31 @@
 "use client";
 
-import { Message } from "ai";
-import { memo } from "react";
+import type { Message } from "ai";
+import { ArrowDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PreviewMessage, ThinkingMessage } from "./message";
 import { useScrollToBottom } from "./use-scroll-to-bottom";
 import { ToolResultDisplay } from "./tool-result-display";
 
-interface MessagesProps {
-  isLoading: boolean;
-  messages: Message[];
-}
-
-function PureMessages({
-  isLoading,
-  messages,
-}: MessagesProps) {
-  const [messagesContainerRef, messagesEndRef] = useScrollToBottom(messages);
+export function Messages({ isLoading, messages }: { isLoading: boolean; messages: Message[] }) {
+  const { container, content, onScroll, showJump, scrollToBottom } = useScrollToBottom();
 
   return (
-    <div
-      ref={messagesContainerRef as React.RefObject<HTMLDivElement>}
-      className="flex flex-col min-w-0 gap-6 flex-1 pt-4"
-    >
-      {messages.map((message, index) => (
-        <div key={message.id || index}>
-          {/* Render tool invocations if they exist */}
-          {message.toolInvocations && message.toolInvocations.map((toolCall) => (
-            <div key={toolCall.toolCallId} className="">
-              <ToolResultDisplay toolCall={toolCall} />
+    <main className="relative flex min-h-0 flex-1 flex-col">
+      <div ref={container} onScroll={onScroll} className="flex-1 overflow-y-auto" aria-label="Conversation">
+        <div ref={content} className="flex flex-col gap-7 py-6 sm:py-8">
+          {messages.map((message) => (
+            <div key={message.id} className="min-w-0">
+              {message.toolInvocations?.map((call) => <ToolResultDisplay key={call.toolCallId} toolCall={call} />)}
+              {message.content && <PreviewMessage message={message} />}
             </div>
           ))}
-          
-          {/* Render the message content */}
-          {message.content && (
-            <PreviewMessage
-              message={message}
-              isLoading={isLoading && index === messages.length - 1 && !message.toolInvocations}
-            />
-          )}
+          {isLoading && <ThinkingMessage />}
         </div>
-      ))}
-
-      {isLoading && messages[messages.length - 1]?.role === 'user' && (
-        <ThinkingMessage />
-      )}
-
-      <div ref={messagesEndRef as React.RefObject<HTMLDivElement>} />
-    </div>
+      </div>
+      {showJump && <Button type="button" size="sm" variant="outline"
+        className="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-card shadow"
+        onClick={scrollToBottom}><ArrowDown /> Latest message</Button>}
+    </main>
   );
 }
-
-export const Messages = memo(PureMessages);

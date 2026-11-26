@@ -1,88 +1,51 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { PlusIcon } from "../icons";
+import { Info, LayoutDashboard, LoaderCircle, Plus, ShieldCheck } from "lucide-react";
 import { useConversationsContext } from "../../hooks/conversations-context";
 import { SidebarHistory } from "./sidebar-history";
 import { Button } from "@/components/ui/button";
-import { Shield } from "lucide-react";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, useSidebar } from "@/components/ui/sidebar";
 
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarHeader,
-  SidebarMenu,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
-
-interface AppSidebarProps {
-  user: any;
-}
-
-export function AppSidebar({ user }: AppSidebarProps) {
+export function AppSidebar() {
   const router = useRouter();
   const { setOpenMobile } = useSidebar();
   const { createConversation } = useConversationsContext();
-  const appName = process.env.NEXT_PUBLIC_APP_NAME!;
-  
-  // Demo mode - use demo user ID
-  const demoUserId = "demo-user";
-  
+  const [creating, setCreating] = useState(false);
+
+  async function startChat() {
+    setCreating(true);
+    try {
+      const conversation = await createConversation();
+      if (!conversation) return;
+      setOpenMobile(false);
+      router.push(`/chat/${conversation.id}`);
+    } finally {
+      setCreating(false);
+    }
+  }
+
   return (
-    <Sidebar className="group-data-[side=left]:border-r-0">
-      <SidebarHeader>
-        <SidebarMenu>
-          <div className="flex flex-row justify-between items-center px-4 py-2">
-            <Link
-              href="/"
-              onClick={() => {
-                setOpenMobile(false);
-              }}
-              className="flex flex-row gap-3 items-center"
-            >
-              <div className="h-10 w-10 rounded-md bg-emerald-500/10 flex items-center justify-center">
-                <Shield className="h-6 w-6 text-emerald-500" />
-              </div>
-              <span className="text-lg font-semibold px-2 hover:bg-muted rounded-md cursor-pointer">
-                {appName}
-              </span>
-            </Link>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  type="button"
-                  className="p-2 h-fit"
-                  onClick={async () => {
-                    setOpenMobile(false);
-                    const newConv = await createConversation(demoUserId, "New Chat");
-                    if (newConv) {
-                      router.push(`/chat/${newConv.id}`);
-                    }
-                  }}
-                >
-                  <PlusIcon />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent align="end">New Chat</TooltipContent>
-            </Tooltip>
-          </div>
-        </SidebarMenu>
+    <Sidebar>
+      <SidebarHeader className="gap-5 px-4 pb-4 pt-5">
+        <Link href="/dashboard" className="flex items-center gap-3 rounded-lg" onClick={() => setOpenMobile(false)}>
+          <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><ShieldCheck className="size-5" /></span>
+          <span className="font-semibold tracking-tight">{process.env.NEXT_PUBLIC_APP_NAME || "FinSync AI"}</span>
+        </Link>
+        <Button type="button" variant="outline" className="justify-start bg-background" disabled={creating} onClick={startChat}>
+          {creating ? <LoaderCircle className="animate-spin" /> : <Plus />} New chat
+        </Button>
       </SidebarHeader>
-
-      <SidebarContent>
-        <SidebarHistory user={user} />
-      </SidebarContent>
-
-      <SidebarFooter>
-        {/* Auth removed - demo mode only */}
+      <SidebarContent><SidebarHistory /></SidebarContent>
+      <SidebarFooter className="gap-1 border-t p-3">
+        <Button variant="ghost" className="justify-start" asChild>
+          <Link href="/dashboard" onClick={() => setOpenMobile(false)}><LayoutDashboard /> Market dashboard</Link>
+        </Button>
+        <Button variant="ghost" className="justify-start" asChild>
+          <Link href="/about" onClick={() => setOpenMobile(false)}><Info /> About FinSync AI</Link>
+        </Button>
       </SidebarFooter>
     </Sidebar>
   );

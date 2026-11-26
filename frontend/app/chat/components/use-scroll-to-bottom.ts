@@ -1,19 +1,35 @@
-import { useEffect, useRef, type RefObject } from 'react';
-import { type Message } from 'ai';
+import { useEffect, useRef, useState } from "react";
 
-export function useScrollToBottom<T extends HTMLElement>(messages: Message[]): [
-  RefObject<T>,
-  RefObject<T>,
-] {
-  const containerRef = useRef<T>(null);
-  const endRef = useRef<T>(null);
+export function useScrollToBottom() {
+  const container = useRef<HTMLDivElement>(null);
+  const content = useRef<HTMLDivElement>(null);
+  const pinned = useRef(true);
+  const [showJump, setShowJump] = useState(false);
+
+  function scrollToBottom() {
+    pinned.current = true;
+    setShowJump(false);
+    const element = container.current;
+    if (element) element.scrollTop = element.scrollHeight;
+  }
+
+  function onScroll() {
+    const element = container.current;
+    if (!element) return;
+    pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < 72;
+    setShowJump(!pinned.current);
+  }
 
   useEffect(() => {
-    const end = endRef.current;
-    if (end) {
-      end.scrollIntoView({ behavior: 'smooth', block: 'end' });
-    }
-  }, [messages.length]);
+    const list = content.current;
+    if (!list) return;
+    const observer = new ResizeObserver(() => {
+      const element = container.current;
+      if (pinned.current && element) element.scrollTop = element.scrollHeight;
+    });
+    observer.observe(list);
+    return () => observer.disconnect();
+  }, []);
 
-  return [containerRef, endRef] as [RefObject<T>, RefObject<T>];
+  return { container, content, onScroll, showJump, scrollToBottom };
 }

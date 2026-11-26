@@ -1,21 +1,8 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Button } from "@/components/ui/button";
-import { Message } from "ai";
-import { memo } from "react";
-import { saveMessages } from "../actions";
-interface SuggestedActionsProps {
-  chatId: string;
-  append: (message: Message) => Promise<string | null | undefined>;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-}
-function PureSuggestedActions({
-  chatId,
-  append,
-  handleSubmit,
-}: SuggestedActionsProps) {
-  const suggestedActions = [
+import { ArrowUpRight, BookOpen, Braces, ClipboardList, FileQuestion, Mail, NotebookPen } from "lucide-react";
+
+const prompts = [
     {
       title: "Summarize Insurance Policy (RAG)",
       label: "Extract key coverages, limits, and exclusions from the insurance PDF",
@@ -53,49 +40,31 @@ function PureSuggestedActions({
         `First, using RAG/document tools, read the insurance PDF at https://micbdyubdfqefphlaouz.supabase.co/storage/v1/object/public/documents/OrientalInsure.pdf and produce a well-structured, detailed summary containing these sections:\n- Named insured\n- Policy number\n- Policy period (effective and expiry dates)\n- Main coverages and limits (list each coverage and its limit)\n- Key exclusions\n- Deductibles\n- Total premium (if present)\n- Any endorsements or special conditions\n- Up to 3 ambiguous terms or potential gaps to clarify (with suggested clarifying questions)\n\nSecond, open Notepad (Windows) and type the structured summary you created. Format the Notepad file with clear headings (one section per heading).`,
     },
   ];
+
+const icons = [BookOpen, FileQuestion, Braces, ClipboardList, Mail, NotebookPen];
+
+export function SuggestedActions({ onSelect, disabled }: {
+  onSelect: (prompt: string) => void;
+  disabled: boolean;
+}) {
   return (
-    <div className="grid sm:grid-cols-2 gap-2 w-full pb-2">
-      {suggestedActions.map((suggestedAction, index) => (
-        <motion.div
-          initial={{
-            opacity: 0,
-            y: 20,
-          }}
-          animate={{
-            opacity: 1,
-            y: 0,
-          }}
-          exit={{
-            opacity: 0,
-            y: 20,
-          }}
-          transition={{
-            delay: 0.05 * index,
-          }}
-          key={`suggested-action-${suggestedAction.title}-${index}`}
-          className={index > 1 ? "hidden sm:block" : "block"}
-        >
-          <Button
-            variant="ghost"
-            onClick={async () => {
-              const userMessage: Message = {
-                id: crypto.randomUUID(),
-                role: 'user',
-                content: suggestedAction.action,
-              };
-              await saveMessages([userMessage], chatId);
-              await append(userMessage);
-            }}
-            className="text-left border rounded-xl px-4 py-3.5 text-sm gap-1 sm:flex-col w-full h-auto justify-start items-start sm:items-stretch"
-          >
-            <span className="font-medium truncate">{suggestedAction.title}</span>
-            <span className="text-muted-foreground truncate">
-              {suggestedAction.label}
+    <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-3" aria-label="Suggested research prompts">
+      {prompts.map(({ title, label, action }, index) => {
+        const Icon = icons[index];
+        return (
+          <button key={title} type="button" disabled={disabled} onClick={() => onSelect(action)}
+            className="group flex min-w-0 items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:flex-col sm:p-4">
+            <span className="flex shrink-0 items-center justify-between text-primary sm:w-full">
+              <Icon className="size-4" aria-hidden />
+              <ArrowUpRight className="hidden size-4 text-muted-foreground transition-colors group-hover:text-primary sm:block" aria-hidden />
             </span>
-          </Button>
-        </motion.div>
-      ))}
+            <span className="min-w-0 space-y-1">
+              <span className="block text-sm font-semibold">{title}</span>
+              <span className="block text-xs leading-relaxed text-muted-foreground">{label}</span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
-export const SuggestedActions = memo(PureSuggestedActions, () => true);

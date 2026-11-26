@@ -1,26 +1,19 @@
 "use client";
 
-import { FormEvent, useRef, useCallback } from "react";
-import { Textarea } from "@/components/ui/textarea";
+import type { FormEvent } from "react";
+import { ArrowUp, LoaderCircle, Mic, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ArrowUp, Loader2, Mic, Square } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { SuggestedActions } from "./suggested-actions";
 import { useVoiceRecorder } from "../hooks/use-voice-recorder";
-
-import { models } from "@/app/chat/lib/ai/providers/providers";
+import { models } from "../lib/ai/models";
 import { ModelSelector } from "./model-selector";
-import { Message } from "ai";
 
 interface MultimodalInputProps {
-  chatId: string;
-  messages: Message[];
-  append: (message: Message) => Promise<string | null | undefined>;
   value: string;
-  onChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   setInput: (value: string) => void;
-  handleSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
-  isLoading: boolean;
+  handleSubmit: (event: FormEvent<HTMLFormElement>) => void;
+  busy: boolean;
+  responding: boolean;
+  onStop: () => void;
   modelState: {
     selectedModel: string;
     setSelectedModel: (model: string) => void;
@@ -28,119 +21,45 @@ interface MultimodalInputProps {
 }
 
 export function MultimodalInput({
-  chatId,
-  messages,
-  append,
-  value,
-  onChange,
-  setInput,
-  handleSubmit,
-  isLoading,
-  modelState,
+  value, setInput, handleSubmit, busy, responding, onStop, modelState,
 }: MultimodalInputProps) {
-  const formRef = useRef<HTMLFormElement>(null);
-
-  // Handle transcription from voice input
-  const handleTranscription = useCallback(
-    (text: string) => {
-      // Append transcribed text to existing input
-      const newValue = value ? `${value} ${text}` : text;
-      setInput(newValue);
-    },
-    [value, setInput]
-  );
-
-  const { isRecording, isProcessing, startRecording, stopRecording, error } =
-    useVoiceRecorder({
-      onTranscription: handleTranscription,
-      silenceTimeout: 2000,
-    });
+  const { isRecording, isProcessing, startRecording, stopRecording, error } = useVoiceRecorder({
+    onTranscription: (text) => setInput(value ? `${value} ${text}` : text),
+  });
 
   return (
-    <form
-      ref={formRef}
-      onSubmit={handleSubmit}
-      className="relative flex flex-col gap-4"
-    >
-      
-      <div className="relative">
-        {messages.length === 0 && (
-                <SuggestedActions 
-                  append={append} 
-                  chatId={chatId} 
-                  handleSubmit={handleSubmit}
-                />
-              )}
-        <Textarea
-          value={value}
-          onChange={onChange}
-          placeholder="Send a message..."
-          className={cn(
-            "min-h-24 max-h-[calc(15dvh)] overflow-hidden resize-none rounded-2xl !text-base",
-            "bg-muted pb-10 dark:border-zinc-700"
-          )}
-          rows={2}
-          disabled={isLoading}
-          onKeyDown={(e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              formRef.current?.requestSubmit();
-            }
-          }}
-        />
-
-        <div className="absolute bottom-2 left-2 gap-2">
-          <ModelSelector models={models} selectedModel={modelState.selectedModel} setSelectedModel={modelState.setSelectedModel} />
-        </div>
-
-        <div className="absolute bottom-2 right-2 flex items-center gap-2">
-          {/* Voice Input Button */}
-          {isProcessing ? (
-            <Button
-              type="button"
-              disabled
-              className="rounded-full h-fit border dark:border-zinc-600"
-              title="Processing audio..."
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </Button>
-          ) : isRecording ? (
-            <Button
-              type="button"
-              onClick={stopRecording}
-              className="rounded-full h-fit border border-red-500 bg-red-500/10 hover:bg-red-500/20 text-red-500"
-              title="Stop recording"
-            >
-              <Square className="h-4 w-4 fill-current" />
+    <form onSubmit={handleSubmit} className="overflow-hidden rounded-2xl border bg-card shadow-sm focus-within:border-primary/60">
+      <textarea
+        value={value}
+        onChange={(event) => setInput(event.target.value)}
+        placeholder="Ask a question or paste a document link…"
+        aria-label="Message"
+        rows={2}
+        className="block min-h-16 w-full resize-none bg-transparent px-4 pt-3 text-base outline-none placeholder:text-muted-foreground"
+        onKeyDown={(event) => {
+          if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
+            event.preventDefault();
+            if (!busy && !isRecording && !isProcessing) event.currentTarget.form?.requestSubmit();
+          }
+        }}
+      />
+      {error && <p role="alert" className="px-4 text-xs text-destructive">{error}</p>}
+      <div className="flex items-center justify-between gap-2 px-2.5 pb-2.5">
+        <ModelSelector models={models} {...modelState} />
+        <div className="flex items-center gap-1.5">
+          <Button type="button" size="icon" variant={isRecording ? "destructive" : "ghost"}
+            className="rounded-full" disabled={isProcessing || (busy && !isRecording)}
+            aria-label={isRecording ? "Stop recording" : isProcessing ? "Transcribing audio" : "Voice input"}
+            onClick={isRecording ? stopRecording : startRecording}>
+            {isProcessing ? <LoaderCircle className="animate-spin" /> : isRecording ? <Square /> : <Mic />}
+          </Button>
+          {responding ? (
+            <Button type="button" size="icon" variant="outline" className="rounded-full" onClick={onStop} aria-label="Stop response">
+              <Square />
             </Button>
           ) : (
-            <Button
-              type="button"
-              onClick={startRecording}
-              disabled={isLoading}
-              variant="ghost"
-              className="rounded-full h-fit border dark:border-zinc-600 hover:bg-muted"
-              title="Voice input"
-            >
-              <Mic className="h-4 w-4" />
-            </Button>
-          )}
-
-          {/* Send Button */}
-          {isLoading ? (
-            <Button
-              type="button"
-              className="rounded-full p-1.5 h-fit border dark:border-zinc-600"
-            >
-              <Loader2 className="h-4 w-4 animate-spin" />
-            </Button>
-          ) : (
-            <Button
-              type="submit"
-              disabled={!value.trim() || isRecording}
-              className="rounded-full h-fit border dark:border-zinc-600"
-            >
-              <ArrowUp className="h-4 w-4" />
+            <Button type="submit" size="icon" className="rounded-full" disabled={busy || !value.trim() || isRecording || isProcessing} aria-label="Send message">
+              {busy ? <LoaderCircle className="animate-spin" /> : <ArrowUp />}
             </Button>
           )}
         </div>

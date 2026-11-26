@@ -1,11 +1,10 @@
 import './globals.css'
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+
 import { ThemeProvider } from "@/components/global/theme-provider"
 import QueryProvider from "@/components/global/query-provider";
 import { Toaster } from "@/components/ui/sonner"
 
-const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'FinSync AI',
@@ -19,7 +18,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="h-full" suppressHydrationWarning>
-      <body className={`${inter.className} h-full`}>
+      <body className="h-full font-sans">
           <QueryProvider>
             <ThemeProvider
               attribute="class"

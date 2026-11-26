@@ -1,16 +1,14 @@
 "use client"
 
-import { Search, Plus, Settings2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
+import Link from "next/link"
+import { ArrowUpRight } from "lucide-react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
 
 const watchlist = [
   { name: "HDFC Bank Limited", symbol: "HDFCBANK", exchange: "NSE", price: "1,007.6", change: "-0.19%", trend: "down" },
   { name: "Reliance Industries", symbol: "RELIANCE", exchange: "BSE", price: "1,566.85", change: "+0.21%", trend: "up" },
   { name: "Infosys Limited", symbol: "INFY", exchange: "NSE", price: "1,560.1", change: "-0.40%", trend: "down" },
-  { name: "ICICI Lombard Gener...", symbol: "ICICIGI", exchange: "NSE", price: "1,970.5", change: "-0.51%", trend: "down" },
+  { name: "ICICI Lombard General Insurance", symbol: "ICICIGI", exchange: "NSE", price: "1,970.5", change: "-0.51%", trend: "down" },
 ]
 
 const gainers = [
@@ -34,108 +32,52 @@ const active = [
   { name: "Suzlon Energy", symbol: "SUZLON", exchange: "NSE", price: "41.25", change: "-0.50%", trend: "down" },
 ]
 
+const moverGroups = { Gainers: gainers, Losers: losers, Active: active };
+
 export function MarketSidebar() {
   return (
-    <div className="space-y-8">
-      {/* Watchlist Section */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">Create Watchlist</h3>
-          <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
-            <Settings2 className="h-4 w-4" />
-          </Button>
-        </div>
-        
-        <div className="bg-card/30 border border-border/40 rounded-xl backdrop-blur-sm overflow-hidden">
-            <div className="space-y-1">
-                {watchlist.map((stock) => (
-                    <div key={stock.symbol} className="flex items-center justify-between p-3 hover:bg-accent/50 transition-colors group cursor-pointer border-b border-border/20 last:border-0">
-                        <div className="flex items-center gap-3">
-                             <div className={`h-8 w-8 rounded-md flex items-center justify-center text-xs font-bold text-white ${
-                                 stock.name.includes("HDFC") ? "bg-blue-700" : 
-                                 stock.name.includes("Reliance") ? "bg-blue-500" : 
-                                 stock.name.includes("Infosys") ? "bg-blue-400" : "bg-orange-600"
-                             }`}>
-                                 {stock.symbol.slice(0,1)}
-                             </div>
-                             <div>
-                                 <div className="font-medium text-sm line-clamp-1">{stock.name}</div>
-                                 <div className="text-xs text-muted-foreground">{stock.symbol} · {stock.exchange}</div>
-                             </div>
-                        </div>
-                         <div className="text-right">
-                             <div className="font-medium text-sm">₹{stock.price}</div>
-                             <div className={`text-xs ${stock.trend === "up" ? "text-emerald-400" : "text-rose-400"}`}>
-                                 {stock.change}
-                             </div>
-                         </div>
-                         <Button size="icon" variant="ghost" className="h-6 w-6 opacity-0 group-hover:opacity-100 absolute right-2">
-                            <Plus className="h-3 w-3" />
-                         </Button>
-                    </div>
-                ))}
-            </div>
-        </div>
-      </div>
-
-      {/* Movers Section */}
-      <div className="space-y-4">
-        <Tabs defaultValue="gainers" className="w-full">
-            <TabsList className="bg-transparent p-0 h-auto space-x-4 justify-start">
-                <TabsTrigger 
-                    value="gainers" 
-                    className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Gainers
-                </TabsTrigger>
-                <TabsTrigger 
-                    value="losers" 
-                    className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Losers
-                </TabsTrigger>
-                <TabsTrigger 
-                    value="active" 
-                    className="data-[state=active]:bg-transparent data-[state=active]:text-foreground data-[state=active]:shadow-none data-[state=active]:border-b-2 data-[state=active]:border-primary rounded-none px-0 pb-1 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                    Active
-                </TabsTrigger>
-            </TabsList>
-            
-            {/* Shared rendering logic for stock items to keep it clean */}
-            {[
-                { value: "gainers", data: gainers },
-                { value: "losers", data: losers },
-                { value: "active", data: active }
-            ].map(({ value, data }) => (
-                <TabsContent key={value} value={value} className="mt-4">
-                    <div className="bg-card/30 border border-border/40 rounded-xl backdrop-blur-sm overflow-hidden">
-                        {data.map((stock, i) => (
-                            <div key={stock.symbol} className="flex items-center justify-between p-3 hover:bg-accent/50 transition-colors border-b border-border/20 last:border-0 cursor-pointer">
-                                <div className="flex items-center gap-3">
-                                    <div className={`h-8 w-8 rounded-md flex items-center justify-center text-xs font-bold text-white ${
-                                        i % 4 === 0 ? "bg-blue-600" : i % 4 === 1 ? "bg-gray-600" : i % 4 === 2 ? "bg-blue-800" : "bg-orange-500"
-                                    }`}>
-                                        {stock.symbol.substring(0,2)}
-                                    </div>
-                                    <div>
-                                        <div className="font-medium text-sm line-clamp-1">{stock.name}</div>
-                                        <div className="text-xs text-muted-foreground">{stock.symbol} · {stock.exchange}</div>
-                                    </div>
-                                </div>
-                                <div className="text-right">
-                                    <div className="font-medium text-sm">₹{stock.price}</div>
-                                    <div className={`text-xs ${stock.trend === "up" ? "text-emerald-400" : "text-rose-400"}`}>
-                                        {stock.change}
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </TabsContent>
-            ))}
+    <aside className="min-w-0 space-y-5">
+      <section id="watchlist" className="scroll-mt-4 rounded-2xl border bg-card p-4">
+        <h2 className="mb-2 font-semibold">Watchlist</h2>
+        <StockList stocks={watchlist} />
+      </section>
+      <section className="rounded-2xl border bg-card p-4">
+        <h2 className="mb-3 font-semibold">Market movers</h2>
+        <Tabs defaultValue="Gainers">
+          <TabsList aria-label="Market movers">
+            {Object.keys(moverGroups).map((group) => <TabsTrigger key={group} value={group}>{group}</TabsTrigger>)}
+          </TabsList>
+          {Object.entries(moverGroups).map(([group, stocks]) => (
+            <TabsContent key={group} value={group}><StockList stocks={stocks} /></TabsContent>
+          ))}
         </Tabs>
-      </div>
-    </div>
-  )
+      </section>
+    </aside>
+  );
+}
+
+function StockList({ stocks }: { stocks: typeof watchlist }) {
+  return (
+    <ul className="divide-y">
+      {stocks.map((stock) => (
+        <li key={stock.symbol}>
+          <Link
+            href={`/chat?${new URLSearchParams({ q: `Analyze ${stock.name} (${stock.symbol}).` })}`}
+            prefetch={false}
+            className="group grid min-w-0 grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-2 rounded-md py-3 hover:bg-accent focus-visible:outline-2"
+          >
+            <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-xs font-semibold text-primary">{stock.symbol.slice(0, 2)}</span>
+            <span className="min-w-0">
+              <span className="block truncate text-sm font-medium">{stock.name}</span>
+              <span className="block truncate text-xs text-muted-foreground">{stock.symbol} · {stock.exchange}</span>
+            </span>
+            <span className="text-right tabular-nums">
+              <span className="flex items-center justify-end gap-1 text-sm font-medium">₹{stock.price}<ArrowUpRight className="size-3 text-muted-foreground" /></span>
+              <span className={stock.trend === "up" ? "text-xs text-emerald-700 dark:text-emerald-400" : "text-xs text-rose-700 dark:text-rose-400"}>{stock.change}</span>
+            </span>
+          </Link>
+        </li>
+      ))}
+    </ul>
+  );
 }

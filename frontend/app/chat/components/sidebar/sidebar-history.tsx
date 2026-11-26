@@ -1,281 +1,110 @@
 "use client";
 
 import { isToday, isYesterday, subMonths, subWeeks } from "date-fns";
+import { MessageSquare, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { User } from "@supabase/supabase-js";
-import { memo, useEffect } from "react";
-import { toast } from "sonner";
-import {
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarMenuAction,
-  useSidebar,
-} from "@/components/ui/sidebar";
-import { useConversationsContext } from "../../hooks/conversations-context";
-import { MoreHorizontalIcon, PencilEditIcon, TrashIcon } from "../icons";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
-import { Conversation } from "@/app/chat/types";
-type GroupedChats = {
-  today: Conversation[];
-  yesterday: Conversation[];
-  lastWeek: Conversation[];
-  lastMonth: Conversation[];
-  older: Conversation[];
-};
-const PureChatItem = ({
-  chat,
-  isActive,
-  onRename,
-  onDelete,
-  setOpenMobile,
-}: {
-  chat: Conversation;
-  isActive: boolean;
-  onRename: (chatId: string, title: string) => void;
-  onDelete: (chatId: string) => void;
-  setOpenMobile: (open: boolean) => void;
-}) => {
-  const [isRenaming, setIsRenaming] = useState(false);
-  const [newTitle, setNewTitle] = useState(chat.title);
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
+import { SidebarGroup, SidebarGroupLabel, SidebarMenu, SidebarMenuAction, SidebarMenuButton, SidebarMenuItem, useSidebar } from "@/components/ui/sidebar";
+import { useConversationsContext } from "../../hooks/conversations-context";
+import type { Conversation } from "../../types";
+
+export function SidebarHistory() {
+  const { id } = useParams();
+  const router = useRouter();
+  const { setOpenMobile } = useSidebar();
+  const { conversations, historyState, refreshConversations, renameConversation, deleteConversation } = useConversationsContext();
+  const [dialog, setDialog] = useState<{ mode: "rename" | "delete"; chat: Conversation }>();
+  const [title, setTitle] = useState("");
+  const [pending, setPending] = useState(false);
+
+  const now = new Date();
+  const groups = { Today: [], Yesterday: [], "Last week": [], "Last month": [], Older: [] } as Record<string, Conversation[]>;
+  for (const chat of conversations) {
+    const date = new Date(chat.updated_at);
+    const group = isToday(date) ? "Today" : isYesterday(date) ? "Yesterday" :
+      date > subWeeks(now, 1) ? "Last week" : date > subMonths(now, 1) ? "Last month" : "Older";
+    groups[group].push(chat);
+  }
+
+  async function confirm() {
+    if (!dialog || pending) return;
+    setPending(true);
+    try {
+      if (dialog.mode === "delete") {
+        if (!(await deleteConversation(dialog.chat.id))) return;
+        if (id === dialog.chat.id) {
+          const next = conversations.find((chat) => chat.id !== id);
+          router.replace(next ? `/chat/${next.id}` : "/chat");
+        }
+      } else if (!(await renameConversation(dialog.chat.id, title.trim()))) return;
+      setDialog(undefined);
+    } finally {
+      setPending(false);
+    }
+  }
+
   return (
-    <SidebarMenuItem>
-      <SidebarMenuButton asChild isActive={isActive}>
-        <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)}>
-          <span>{chat.title}</span>
-        </Link>
-      </SidebarMenuButton>
-
-      <DropdownMenu modal={true}>
-        <DropdownMenuTrigger asChild>
-          <SidebarMenuAction
-            className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground mr-0.5"
-            showOnHover={!isActive}
-          >
-            <MoreHorizontalIcon />
-            <span className="sr-only">More</span>
-          </SidebarMenuAction>
-        </DropdownMenuTrigger>
-
-        <DropdownMenuContent side="bottom" align="end">
-          <DropdownMenuItem
-            onClick={() => {
-              setIsRenaming(true);
-              setNewTitle(chat.title);
-            }}
-          >
-            <PencilEditIcon size={16} />
-            <span>Rename</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem
-            className="text-destructive focus:bg-destructive/15 focus:text-destructive"
-            onClick={() => onDelete(chat.id)}
-          >
-            <TrashIcon size={16} />
-            <span>Delete</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-
-      <Dialog open={isRenaming} onOpenChange={setIsRenaming}>
+    <SidebarGroup className="px-3">
+      <SidebarGroupLabel>Chat history</SidebarGroupLabel>
+      {historyState === "loading" && <p className="px-2 text-xs text-muted-foreground">Loading history…</p>}
+      {historyState === "error" && (
+        <div className="space-y-2 px-2 py-1 text-xs text-muted-foreground">
+          <p>History is unavailable.</p>
+          <Button type="button" size="sm" variant="outline" onClick={() => void refreshConversations()}>Retry</Button>
+        </div>
+      )}
+      {historyState === "ready" && !conversations.length && <p className="px-2 text-xs text-muted-foreground">Recent chats will appear here.</p>}
+      {Object.entries(groups).map(([label, chats]) => chats.length > 0 && (
+        <div key={label} className="mb-3">
+          <p className="px-2 pb-1 pt-2 text-xs font-medium text-muted-foreground">{label}</p>
+          <SidebarMenu>
+            {chats.map((chat) => (
+              <SidebarMenuItem key={chat.id}>
+                <SidebarMenuButton asChild isActive={chat.id === id} tooltip={chat.title}>
+                  <Link href={`/chat/${chat.id}`} prefetch={false} onClick={() => setOpenMobile(false)} aria-current={chat.id === id ? "page" : undefined}>
+                    <MessageSquare /><span>{chat.title}</span>
+                  </Link>
+                </SidebarMenuButton>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuAction aria-label={`Options for ${chat.title}`}><MoreHorizontal /></SidebarMenuAction>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="bottom" align="end">
+                    <DropdownMenuItem onSelect={() => { setTitle(chat.title); setDialog({ mode: "rename", chat }); }}>
+                      <Pencil /> Rename
+                    </DropdownMenuItem>
+                    <DropdownMenuItem variant="destructive" onSelect={() => setDialog({ mode: "delete", chat })}>
+                      <Trash2 /> Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </div>
+      ))}
+      <Dialog open={Boolean(dialog)} onOpenChange={(open) => { if (!open && !pending) setDialog(undefined); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Rename Chat</DialogTitle>
+            <DialogTitle>{dialog?.mode === "delete" ? "Delete chat?" : "Rename chat"}</DialogTitle>
+            <DialogDescription>{dialog?.mode === "delete" ? `“${dialog.chat.title}” and its messages will be deleted.` : "Choose a title for this conversation."}</DialogDescription>
           </DialogHeader>
-          <Input
-            value={newTitle}
-            onChange={(e) => setNewTitle(e.target.value)}
-            placeholder="Enter new title"
-          />
-          <Button
-            onClick={() => {
-              onRename(chat.id, newTitle);
-              setIsRenaming(false);
-            }}
-          >
-            Save
-          </Button>
+          <form className="grid gap-4" onSubmit={(event) => { event.preventDefault(); void confirm(); }}>
+            {dialog?.mode === "rename" && <Input aria-label="Chat title" value={title} maxLength={120} onChange={(event) => setTitle(event.target.value)} required />}
+            <div className="flex justify-end gap-2">
+              <Button type="button" variant="outline" disabled={pending} onClick={() => setDialog(undefined)}>Cancel</Button>
+              <Button type="submit" variant={dialog?.mode === "delete" ? "destructive" : "default"} disabled={pending || (dialog?.mode === "rename" && !title.trim())}>
+                {dialog?.mode === "delete" ? "Delete chat" : "Save title"}
+              </Button>
+            </div>
+          </form>
         </DialogContent>
       </Dialog>
-    </SidebarMenuItem>
-  );
-};
-export const ChatItem = memo(PureChatItem);
-export function SidebarHistory({ user }: { user: User | null }) {
-  const { setOpenMobile } = useSidebar();
-  const { id } = useParams();
-  const {
-    conversations,
-    fetchConversations,
-    renameConversation,
-    deleteConversation,
-  } = useConversationsContext();
-  useEffect(() => {
-    // Demo mode - always use demo-user
-    const demoUserId = 'demo-user';
-    
-    // initial load
-    fetchConversations(demoUserId);
-
-
-  }, [fetchConversations]);
-  useEffect(() => {
-    console.log("Conversations loaded:", conversations.length); // Debug log
-  }, [conversations]);
-
-  if (!conversations || conversations.length === 0) {
-    return (
-      <SidebarGroup>
-        <SidebarGroupContent>
-          <div className="px-2 text-zinc-500 w-full flex flex-row justify-center items-center text-sm gap-2">
-            Your conversations will appear here once you start chatting!
-          </div>
-        </SidebarGroupContent>
-      </SidebarGroup>
-    );
-  }
-  const groupChatsByDate = (chats: Conversation[]): GroupedChats => {
-    const now = new Date();
-    const oneWeekAgo = subWeeks(now, 1);
-    const oneMonthAgo = subMonths(now, 1);
-    return chats.reduce(
-      (groups, chat) => {
-        const chatDate = new Date(chat.updated_at);
-        if (isToday(chatDate)) {
-          groups.today.push(chat);
-        } else if (isYesterday(chatDate)) {
-          groups.yesterday.push(chat);
-        } else if (chatDate > oneWeekAgo) {
-          groups.lastWeek.push(chat);
-        } else if (chatDate > oneMonthAgo) {
-          groups.lastMonth.push(chat);
-        } else {
-          groups.older.push(chat);
-        }
-        return groups;
-      },
-      {
-        today: [],
-        yesterday: [],
-        lastWeek: [],
-        lastMonth: [],
-        older: [],
-      } as GroupedChats,
-    );
-  };
-  const groupedChats = groupChatsByDate(conversations);
-  return (
-    <SidebarGroup>
-      <SidebarGroupContent>
-        <SidebarMenu>
-          {groupedChats.today.length > 0 && (
-            <>
-              <div className="px-2 py-1 text-xs text-sidebar-foreground/50">
-                Today
-              </div>
-              {groupedChats.today.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === id}
-                  onRename={renameConversation}
-                  onDelete={deleteConversation}
-                  setOpenMobile={setOpenMobile}
-                />
-              ))}
-            </>
-          )}
-
-          {groupedChats.yesterday.length > 0 && (
-            <>
-              <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                Yesterday
-              </div>
-              {groupedChats.yesterday.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === id}
-                  onRename={renameConversation}
-                  onDelete={deleteConversation}
-                  setOpenMobile={setOpenMobile}
-                />
-              ))}
-            </>
-          )}
-
-          {groupedChats.lastWeek.length > 0 && (
-            <>
-              <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                Last Week
-              </div>
-              {groupedChats.lastWeek.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === id}
-                  onRename={renameConversation}
-                  onDelete={deleteConversation}
-                  setOpenMobile={setOpenMobile}
-                />
-              ))}
-            </>
-          )}
-
-          {groupedChats.lastMonth.length > 0 && (
-            <>
-              <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                Last Month
-              </div>
-              {groupedChats.lastMonth.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === id}
-                  onRename={renameConversation}
-                  onDelete={deleteConversation}
-                  setOpenMobile={setOpenMobile}
-                />
-              ))}
-            </>
-          )}
-
-          {groupedChats.older.length > 0 && (
-            <>
-              <div className="px-2 py-1 text-xs text-sidebar-foreground/50 mt-6">
-                Older
-              </div>
-              {groupedChats.older.map((chat) => (
-                <ChatItem
-                  key={chat.id}
-                  chat={chat}
-                  isActive={chat.id === id}
-                  onRename={renameConversation}
-                  onDelete={deleteConversation}
-                  setOpenMobile={setOpenMobile}
-                />
-              ))}
-            </>
-          )}
-        </SidebarMenu>
-      </SidebarGroupContent>
     </SidebarGroup>
   );
 }
