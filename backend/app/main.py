@@ -20,11 +20,6 @@ app.add_middleware(
 
 app.include_router(api_router)
 
-@app.on_event("startup")
-async def startup_event():
-    print("Starting  API Server...")
-
-
 @app.get("/")
 async def root():
     return {

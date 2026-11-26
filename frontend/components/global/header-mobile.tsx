@@ -2,7 +2,7 @@
 
 import * as React from "react"
 import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Menu } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -28,12 +28,13 @@ export function NavigationMobile({ navigationLinks }: NavigationMobileProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full max-w-[300px] sm:w-[300px]">
-        <nav className="flex flex-col gap-4">
+        <SheetHeader><SheetTitle>Navigation</SheetTitle><SheetDescription className="sr-only">FinSync AI pages</SheetDescription></SheetHeader>
+        <nav className="flex flex-col gap-4 px-4" aria-label="Main navigation">
           {navigationLinks.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-                            prefetch={item.href !== "/chat"}
+              prefetch={item.href !== "/chat" && item.href !== "/"}
               onClick={() => setOpen(false)}
               className={cn(
                 "text-sm transition-colors hover:text-primary",

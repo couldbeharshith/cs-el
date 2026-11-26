@@ -1,11 +1,12 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import type { Message } from "ai";
 import { ArrowDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PreviewMessage, ThinkingMessage } from "./message";
 import { useScrollToBottom } from "./use-scroll-to-bottom";
-import { ToolResultDisplay } from "./tool-result-display";
+const ToolResultDisplay = dynamic(() => import("./tool-result-display").then((module) => module.ToolResultDisplay));
 
 export function Messages({ isLoading, messages }: { isLoading: boolean; messages: Message[] }) {
   const { container, content, onScroll, showJump, scrollToBottom } = useScrollToBottom();

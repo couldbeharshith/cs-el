@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, BookOpen, Braces, ClipboardList, FileQuestion, Mail, NotebookPen } from "lucide-react";
+import { BookOpen, Braces, ClipboardList, FileQuestion, Mail, NotebookPen } from "lucide-react";
 
 const prompts = [
     {
@@ -53,10 +53,9 @@ export function SuggestedActions({ onSelect, disabled }: {
         const Icon = icons[index];
         return (
           <button key={title} type="button" disabled={disabled} onClick={() => onSelect(action)}
-            className="group flex min-w-0 items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:flex-col sm:p-4">
-            <span className="flex shrink-0 items-center justify-between text-primary sm:w-full">
+            className="group flex min-w-0 items-start gap-3 rounded-xl border bg-card p-3 text-left transition-colors hover:border-primary/50 hover:bg-accent focus-visible:outline-2 focus-visible:outline-ring disabled:opacity-50 sm:p-3.5">
+            <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
               <Icon className="size-4" aria-hidden />
-              <ArrowUpRight className="hidden size-4 text-muted-foreground transition-colors group-hover:text-primary sm:block" aria-hidden />
             </span>
             <span className="min-w-0 space-y-1">
               <span className="block text-sm font-semibold">{title}</span>

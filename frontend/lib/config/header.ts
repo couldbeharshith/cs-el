@@ -32,6 +32,7 @@ export const headerConfig: HeaderConfig = {
   { 
     href: "/chat", 
     label: "Chat" 
-  }
+  },
+  { href: "/about", label: "About" }
   ]
 }

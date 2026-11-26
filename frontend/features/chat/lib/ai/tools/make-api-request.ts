@@ -9,10 +9,11 @@ export const makeApiRequestTool = tool({
     headers: z.record(z.string()).optional().describe('Optional headers to include in the request.'),
     body: z.record(z.union([z.string(), z.number(), z.boolean(), z.null()])).optional().describe('Optional body for the request (for POST, PUT, etc.). Must be a JSON object with key-value pairs.'),
   }),
-  execute: async ({ url, method, headers, body }) => {
+  execute: async ({ url, method, headers, body }, { abortSignal }) => {
     try {
       const options: RequestInit = {
         method,
+        signal: abortSignal ? AbortSignal.any([abortSignal, AbortSignal.timeout(25_000)]) : AbortSignal.timeout(25_000),
         headers: {
           'Content-Type': 'application/json',
           ...headers,
@@ -41,7 +42,6 @@ export const makeApiRequestTool = tool({
         request: {
             url,
             method,
-            headers: options.headers,
             body
         }
       });
@@ -52,7 +52,6 @@ export const makeApiRequestTool = tool({
           request: {
             url,
             method,
-            headers,
             body
         }
       });

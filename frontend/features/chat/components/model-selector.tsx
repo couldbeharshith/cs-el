@@ -43,6 +43,8 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
         <PopoverTrigger asChild>
           <Button
             variant="ghost"
+            type="button"
+            aria-label="Chat profile"
             role="combobox"
             aria-expanded={open}
             className="w-auto justify-between text-muted-foreground hover:text-foreground"
@@ -84,7 +86,7 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button variant="ghost" className="w-auto justify-between text-muted-foreground hover:text-foreground">
+        <Button type="button" aria-label="Chat profile" variant="ghost" className="w-auto justify-between text-muted-foreground hover:text-foreground">
           {selectedModelLabel}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>

@@ -91,9 +91,9 @@ export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
         <Messages messages={messages} isLoading={status === "submitted"} />
       ) : (
         <main className="flex flex-1 flex-col overflow-y-auto">
-          <div className="mx-auto my-auto w-full max-w-4xl px-4 py-8 sm:px-8 sm:py-12">
-            <div className="mb-6 sm:mb-9">
-              <div className="mb-4 grid size-11 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
+          <div className="mx-auto my-auto w-full max-w-4xl px-4 py-6 sm:px-8 sm:py-7">
+            <div className="mb-5 sm:mb-6">
+              <div className="mb-3 grid size-11 place-items-center rounded-xl border border-primary/25 bg-primary/10 text-primary">
                 <ShieldCheck className="size-6" aria-hidden />
               </div>
               <h1 className="text-3xl font-semibold tracking-tight sm:text-5xl">What are you researching?</h1>

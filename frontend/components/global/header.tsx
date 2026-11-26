@@ -1,140 +1,40 @@
-"use client"
+"use client";
 
-import * as React from "react"
-import Link from "next/link"
-import { ModeToggle } from "./theme-switcher"
-import { usePathname } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { NavigationMobile } from "./header-mobile"
-import { motion, useAnimationControls, LayoutGroup } from "framer-motion"
-import { HeaderConfig } from "@/lib/config/header"
-import { Shield } from "lucide-react"
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { ShieldCheck } from "lucide-react";
+import type { HeaderConfig } from "@/lib/config/header";
+import { cn } from "@/lib/utils";
+import { NavigationMobile } from "./header-mobile";
+import { ModeToggle } from "./theme-switcher";
 
-interface HeaderProps {
-  config: HeaderConfig
-}
-
-function BlobBackground() {
-  return (
-    <div className="pointer-events-none absolute inset-0">
-      <svg width="100%" height="100%" className="absolute inset-0">
-        <defs>
-          <linearGradient id="blob-gradient" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="rgba(16, 185, 129, 0.15)" />
-            <stop offset="100%" stopColor="rgba(74, 222, 128, 0.15)" />
-          </linearGradient>
-          <filter id="blob-filter">
-            <feGaussianBlur in="SourceGraphic" stdDeviation="4" result="blur" />
-            <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 25 -15" result="blob" />
-          </filter>
-        </defs>
-      </svg>
-    </div>
-  )
-}
-
-export function Header({ config }: HeaderProps) {
-  const pathname = usePathname()
-  const [isScrolled, setIsScrolled] = React.useState(false)
-  const blobControls = useAnimationControls()
-
-  React.useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20)
-    }
-    window.addEventListener("scroll", handleScroll)
-    return () => window.removeEventListener("scroll", handleScroll)
-  }, [])
+export function Header({ config }: { config: HeaderConfig }) {
+  const pathname = usePathname();
 
   return (
-    <>
-      <div className="m-10" />
-
-      <motion.header
-        initial={{ y: -100, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ type: "spring", stiffness: 100, damping: 20 }}
-        className="fixed left-0 right-0 top-0 z-40"
-      >
-        <motion.div
-          animate={{
-            maxWidth: isScrolled ? "68rem" : "100%",
-            margin: isScrolled ? "1rem auto" : "0 auto",
-            borderRadius: isScrolled ? "9999px" : "0",
-          }}
-          transition={{
-            duration: 0.3,
-            ease: "easeInOut",
-          }}
-          className={cn(
-            "bg-background/80 border backdrop-blur-xl transition-all duration-500",
-            isScrolled 
-              ? "bg-background/80 mx-4 md:mx-auto shadow-lg " 
-              : "shadow-sm "
+    <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-[1450px] items-center justify-between gap-3 px-4 sm:px-6">
+        <Link href="/" prefetch={false} className="flex items-center gap-2 rounded-lg font-semibold tracking-tight">
+          {config.brand.icon === "shield" && (
+            <span className="grid size-8 place-items-center rounded-lg bg-primary text-primary-foreground"><ShieldCheck className="size-5" /></span>
           )}
-        >
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-            <div className={cn(
-              "flex items-center justify-between",
-              isScrolled 
-                ? "h-14" 
-                : "h-16"
-            )}>
-              <Link href="/" className="group relative flex items-center gap-3">
-                {config.brand.icon === "shield" && (
-                  <Shield className="h-6 w-6 text-emerald-500" />
-                )}
-                <span className="font-medium tracking-tight">{config.brand.title}</span>
-              </Link>
-
-              <nav className="relative hidden md:block">
-                <LayoutGroup>
-                  <motion.ul className="flex items-center gap-1">
-                    {config.navigationLinks.map((item) => {
-                      const isActive = pathname === item.href || pathname.startsWith(`${item.href}/`)
-                      return (
-                        <motion.li key={item.href} className="relative flex items-center justify-center">
-                          <Link
-                            href={item.href}
-                            prefetch={item.href !== "/chat"}
-                            className={cn(
-                              "relative flex items-center justify-center rounded-full px-4 py-2 text-sm transition-colors duration-200",
-                              isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-primary"
-                            )}
-                          >
-                            {item.label}
-                          </Link>
-                          {isActive && (
-                            <motion.div
-                              layoutId="blob"
-                              className="absolute inset-0 -z-10 rounded-full bg-gradient-to-r from-emerald-500/30 to-green-400/30 dark:from-emerald-400/30 dark:to-green-300/30 shadow-[0_0_15px_rgba(16,185,129,0.3)] dark:shadow-[0_0_20px_rgba(16,185,129,0.25)]"
-                              transition={{
-                                type: "spring",
-                                stiffness: 400,
-                                damping: 30,
-                                mass: 1,
-                              }}
-                            >
-                              <BlobBackground />
-                            </motion.div>
-                          )}
-                        </motion.li>
-                      )
-                    })}
-                  </motion.ul>
-                </LayoutGroup>
-              </nav>
-
-              <div className="flex items-center gap-2">
-                <div className="md:hidden">
-                  <NavigationMobile navigationLinks={config.navigationLinks} />
-                </div>
-                <ModeToggle />
-              </div>
-            </div>
-          </div>
-        </motion.div>
-      </motion.header>
-    </>
-  )
+          {config.brand.title}
+        </Link>
+        <nav aria-label="Main navigation" className="hidden items-center gap-1 md:flex">
+          {config.navigationLinks.map(({ href, label }) => {
+            const active = pathname === href || (href !== "/" && pathname.startsWith(`${href}/`));
+            return <Link key={href} href={href} prefetch={href !== "/chat" && href !== "/"}
+              aria-current={active ? "page" : undefined}
+              className={cn("rounded-lg px-3 py-1.5 text-sm transition-colors hover:bg-accent", active ? "bg-primary/10 font-medium text-primary" : "text-muted-foreground")}>
+              {label}
+            </Link>;
+          })}
+        </nav>
+        <div className="flex items-center gap-2">
+          <NavigationMobile navigationLinks={config.navigationLinks} />
+          <ModeToggle />
+        </div>
+      </div>
+    </header>
+  );
 }
