@@ -35,9 +35,6 @@ import io
 from openpyxl import load_workbook
 
 # LLM and vector database imports
-import google.generativeai as genai
-from google.generativeai.types import HarmCategory, HarmBlockThreshold
-from google import genai as google_genai
 from google.genai import types
 
 from groq import Groq
@@ -45,6 +42,7 @@ from pinecone import Pinecone
 
 # Internal imports
 from app.config import Config
+from app.gemini import create_client, generate_text
 from app.models import (
     DocumentChunk,
     ChunkMetadata,
@@ -2840,151 +2838,23 @@ class LLMService:
             raise Exception("No API keys configured for any service")
 
     async def _try_gemini_request_with_cycling(self, prompt: str) -> str:
-        """
-        Try making request to Gemini cycling through all keys.
-        For each individual request, if Gemini fails, immediately try Groq.
-        Keep cycling through all Gemini keys indefinitely.
-
-        Args:
-            prompt: Formatted prompt string
-
-        Returns:
-            Generated response string
-        """
         if not self.gemini_key_manager:
-            raise Exception("No Gemini API keys configured")
+            raise ValueError("Gemini credentials are missing")
 
-        # Try all Gemini keys once
-        for attempt in range(len(self.gemini_key_manager.api_keys)):
+        for _ in self.gemini_key_manager.api_keys:
             try:
-                # Get next key in rotation
-                api_key = await self.gemini_key_manager.get_next_key()
+                key = await self.gemini_key_manager.get_next_key()
+                return await generate_text(key, prompt, safety_threshold="BLOCK_MEDIUM_AND_ABOVE")
+            except Exception as error:
+                logger.warning("Gemini text request failed: %s", type(error).__name__)
 
-                # Configure Gemini with current key
-                genai.configure(api_key=api_key)
+            if self.groq_key_manager and self.groq_key_manager.api_keys:
+                try:
+                    return await self._try_single_groq_request(prompt)
+                except Exception as error:
+                    logger.warning("Groq fallback failed: %s", type(error).__name__)
 
-                # Create model instance WITHOUT flight tool for regular text generation
-                # Flight tool should only be available when processing flight-related documents
-                model = genai.GenerativeModel(
-                    model_name=Config.GEMINI_MODEL,
-                    generation_config={
-                        "temperature": Config.GEMINI_TEMPERATURE,
-                        "top_p": Config.GEMINI_TOP_P,
-                        "max_output_tokens": Config.GEMINI_MAX_TOKENS,
-                    },
-                    safety_settings={
-                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                    # NO TOOLS - flight tool only available for flight-related documents
-                )
-
-                # Make request
-                response = await asyncio.to_thread(model.generate_content, prompt)
-
-                if not response:
-                    raise Exception("Empty response from Gemini API")
-
-                logger.debug(f"Gemini response type: {type(response)}")
-                logger.debug(
-                    f"Gemini response candidates: {len(response.candidates) if response.candidates else 0}"
-                )
-
-                # Return regular text response (no function calls in regular text generation)
-                if response.text:
-                    # Add sleep after successful LLM call
-                    await asyncio.sleep(0.5)
-                    return response.text.strip()
-                else:
-                    raise Exception("No text response from Gemini API")
-
-            except Exception as e:
-                # Add sleep after failed LLM call
-                await asyncio.sleep(0.5)
-
-                # For individual Gemini failure, try Groq immediately
-                if self.groq_key_manager and self.groq_key_manager.api_keys:
-                    try:
-                        return await self._try_single_groq_request(prompt)
-                    except Exception:
-                        # Continue to next Gemini key if Groq also fails
-                        pass
-
-                # Continue to next Gemini key
-                continue
-
-        # If all Gemini keys failed, raise exception
-        raise Exception("All Gemini keys exhausted")
-
-    async def _try_gemini_request_without_tools(self, prompt: str) -> str:
-        """
-        Try making request to Gemini WITHOUT flight tool (for internal use).
-
-        Args:
-            prompt: Formatted prompt string
-
-        Returns:
-            Generated response string
-        """
-        if not self.gemini_key_manager:
-            raise Exception("No Gemini API keys configured")
-
-        # Try all Gemini keys once
-        for attempt in range(len(self.gemini_key_manager.api_keys)):
-            try:
-                # Get next key in rotation
-                api_key = await self.gemini_key_manager.get_next_key()
-
-                # Configure Gemini with current key
-                genai.configure(api_key=api_key)
-
-                # Create model instance WITHOUT flight number tool
-                model = genai.GenerativeModel(
-                    model_name=Config.GEMINI_MODEL,
-                    generation_config={
-                        "temperature": Config.GEMINI_TEMPERATURE,
-                        "top_p": Config.GEMINI_TOP_P,
-                        "max_output_tokens": Config.GEMINI_MAX_TOKENS,
-                    },
-                    safety_settings={
-                        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE,
-                    },
-                    # No tools parameter - this is the key difference
-                )
-
-                # Make request
-                response = await asyncio.to_thread(model.generate_content, prompt)
-
-                if not response or not response.text:
-                    raise Exception("Empty response from Gemini API")
-
-                # Add sleep after successful LLM call
-                await asyncio.sleep(0.5)
-
-                return response.text.strip()
-
-            except Exception as e:
-                # Add sleep after failed LLM call
-                await asyncio.sleep(0.5)
-
-                # For individual Gemini failure, try Groq immediately
-                if self.groq_key_manager and self.groq_key_manager.api_keys:
-                    try:
-                        return await self._try_single_groq_request(prompt)
-                    except Exception:
-                        # Continue to next Gemini key if Groq also fails
-                        pass
-
-                # Continue to next Gemini key
-                continue
-
-        # If all Gemini keys failed, raise exception
-        raise Exception("All Gemini keys exhausted (internal request)")
+        raise RuntimeError("Gemini attempts exhausted")
 
     async def _make_single_pdf_llm_request(
         self, prompt: str, pdf_content: bytes, content_type: str
@@ -3012,7 +2882,7 @@ class LLMService:
 
                 # Use the new Google GenAI client approach
                 # Create client with current key
-                client = google_genai.Client(api_key=api_key)
+                client = create_client(api_key)
 
                 # Create document part from bytes
                 document_part = types.Part.from_bytes(
@@ -3072,7 +2942,7 @@ class LLMService:
         api_key = await self.groq_key_manager.get_next_key()
 
         # Create Groq client with current key
-        client = Groq(api_key=api_key)
+        client = Groq(api_key=api_key, timeout=60.0, max_retries=1)
 
         # Make request
         completion = await asyncio.to_thread(
@@ -3145,9 +3015,6 @@ class LLMService:
                     image_data = image_file.read()
 
                 # Create image part for Gemini vision API
-                import google.generativeai as genai
-                from PIL import Image
-                import io
 
                 # Load image using PIL
                 image = Image.open(io.BytesIO(image_data))
@@ -3190,7 +3057,7 @@ class LLMService:
                 api_key = await self.gemini_key_manager.get_next_key()
 
                 # Use the new Google GenAI client approach for better control
-                client = google_genai.Client(api_key=api_key)
+                client = create_client(api_key)
 
                 # Create image part from PIL Image
                 import io
@@ -3398,7 +3265,7 @@ class LLMService:
 
                 # Use the new Google GenAI client approach
                 # Create client with current key
-                client = google_genai.Client(api_key=api_key)
+                client = create_client(api_key)
 
                 # Create document part from bytes
                 document_part = types.Part.from_bytes(data=content, mime_type=mime_type)
@@ -3709,7 +3576,7 @@ class QueryExpansionService:
             api_key = await self.groq_key_manager.get_next_key()
 
             # Initialize Groq client
-            groq_client = Groq(api_key=api_key)
+            groq_client = Groq(api_key=api_key, timeout=60.0, max_retries=1)
 
             # Format prompt
             prompt = Config.get_prompt("rephrase_prompt", question=query)
@@ -3755,7 +3622,7 @@ class QueryExpansionService:
                 return await self._generate_queries_internal(query)
 
             # Initialize Groq client with pre-assigned key
-            groq_client = Groq(api_key=api_key)
+            groq_client = Groq(api_key=api_key, timeout=60.0, max_retries=1)
 
             # Format prompt
             prompt = Config.get_prompt("rephrase_prompt", question=query)
@@ -3790,54 +3657,10 @@ class QueryExpansionService:
             return [query]
 
     async def _generate_with_gemini(self, query: str) -> List[str]:
-        """
-        Generate queries using Gemini API as fallback.
-
-        Args:
-            query: Original query string
-
-        Returns:
-            List of generated queries
-        """
-        try:
-            # Get API key
-            api_key = await self.gemini_key_manager.get_next_key()
-
-            # Configure Gemini
-            genai.configure(api_key=api_key)
-
-            # Initialize model
-            model = genai.GenerativeModel(
-                model_name=Config.GEMINI_MODEL,
-                generation_config=genai.types.GenerationConfig(
-                    temperature=Config.GEMINI_TEMPERATURE,
-                    max_output_tokens=Config.GEMINI_MAX_TOKENS,
-                    top_p=Config.GEMINI_TOP_P,
-                ),
-                safety_settings={
-                    HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-                    HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-                },
-            )
-
-            # Format prompt
-            prompt = Config.get_prompt("rephrase_prompt", question=query)
-
-            # Make request to Gemini
-            response = await asyncio.to_thread(model.generate_content, prompt)
-            response_text = response.text.strip()
-
-            # Parse response into individual queries
-            queries = self._parse_query_response(response_text)
-
-            logger.debug(f"Gemini generated {len(queries)} queries")
-            return queries
-
-        except Exception as e:
-            logger.error(f"Gemini query generation failed: {e}")
-            raise
+        api_key = await self.gemini_key_manager.get_next_key()
+        prompt = Config.get_prompt("rephrase_prompt", question=query)
+        response = await generate_text(api_key, prompt, safety_threshold="BLOCK_NONE")
+        return self._parse_query_response(response)
 
     def _parse_query_response(self, response_text: str) -> List[str]:
         """

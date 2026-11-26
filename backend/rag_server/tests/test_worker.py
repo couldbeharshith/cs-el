@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.config import Config
 from app.main import app
+from app.gemini import generate_text
 from app.services import DocumentService
 
 BODY = {
@@ -74,3 +75,15 @@ class WorkerTests(TestCase):
         index.close.assert_called_once()
         fetch.assert_awaited_once_with(BODY["documents"])
         self.assertEqual(model.await_count, 2)
+
+
+class GeminiTests(IsolatedAsyncioTestCase):
+    async def test_text_requests_use_their_own_credentials_and_settings(self):
+        generation = AsyncMock(return_value=SimpleNamespace(text="Test answer"))
+        client = SimpleNamespace(aio=SimpleNamespace(models=SimpleNamespace(generate_content=generation)))
+        with patch("app.gemini.create_client", return_value=client) as create:
+            answer = await generate_text("fixture-key", "Test prompt", safety_threshold="BLOCK_MEDIUM_AND_ABOVE")
+        create.assert_called_once_with("fixture-key")
+        self.assertEqual(answer, "Test answer")
+        self.assertEqual(generation.call_args.kwargs["contents"], "Test prompt")
+        self.assertEqual(len(generation.call_args.kwargs["config"].safety_settings), 4)
