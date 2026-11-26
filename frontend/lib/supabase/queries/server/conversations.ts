@@ -1,5 +1,5 @@
 import { createSupabaseServer } from "../../server";
-import { Conversation } from "@/app/chat/types";
+import { Conversation } from "@/features/chat/types";
 
 export async function fetchConversationsServer(userId: string): Promise<Conversation[]> {
   const supabase = await createSupabaseServer();

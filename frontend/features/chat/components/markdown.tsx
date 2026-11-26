@@ -2,7 +2,7 @@ import Link from "next/link";
 import React, { memo, useMemo, useState } from "react";
 import ReactMarkdown, { type Components } from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { CodeBlock } from "@/app/chat/components/code-block";
+import { CodeBlock } from "@/features/chat/components/code-block";
 const components: Partial<Components> = {
   // @ts-expect-error -- types are wrong
   code: CodeBlock,

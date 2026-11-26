@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { createConversationServer } from "@/lib/supabase/queries/server/conversations";
-import { getUser } from "./hooks/get-user";
+import { getUser } from "@/features/chat/hooks/get-user";
 
 export const dynamic = "force-dynamic";
 

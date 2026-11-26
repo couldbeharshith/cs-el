@@ -1,7 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase/server";
-import { Chat } from "../components/chat";
+import { Chat } from "@/features/chat/components/chat";
 import { notFound } from "next/navigation";
-import { getUser } from "../hooks/get-user";
+import { getUser } from "@/features/chat/hooks/get-user";
 import type { Message } from "ai";
 
 export default async function ChatPage({ params, searchParams }: {

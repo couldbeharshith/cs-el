@@ -1,14 +1,14 @@
 import { convertToCoreMessages, streamText, smoothStream, type Message } from "ai";
 import { z } from "zod";
-import { getSystemPrompt } from "@/app/chat/lib/ai/prompts/system-prompt";
-import { querySupabaseTool } from "@/app/chat/lib/ai/tools/query-supabase";
-import { generateChart } from "@/app/chat/lib/ai/tools/generate-chart";
-import { exaSearchTool } from "@/app/chat/lib/ai/tools/exa-search";
-import { makeApiRequestTool } from "@/app/chat/lib/ai/tools/make-api-request";
-import { screenerQueryAgent } from "@/app/chat/lib/ai/tools/screener-query-agent";
-import { myProvider } from "@/app/chat/lib/ai/providers/providers";
-import { getAllMCPTools } from "@/app/chat/lib/simple-mcp-manager";
-import { getUser } from "@/app/chat/hooks/get-user";
+import { getSystemPrompt } from "@/features/chat/lib/ai/prompts/system-prompt";
+import { querySupabaseTool } from "@/features/chat/lib/ai/tools/query-supabase";
+import { generateChart } from "@/features/chat/lib/ai/tools/generate-chart";
+import { exaSearchTool } from "@/features/chat/lib/ai/tools/exa-search";
+import { makeApiRequestTool } from "@/features/chat/lib/ai/tools/make-api-request";
+import { screenerQueryAgent } from "@/features/chat/lib/ai/tools/screener-query-agent";
+import { myProvider } from "@/features/chat/lib/ai/providers/providers";
+import { getAllMCPTools } from "@/features/chat/lib/simple-mcp-manager";
+import { getUser } from "@/features/chat/hooks/get-user";
 
 export const maxDuration = 60;
 

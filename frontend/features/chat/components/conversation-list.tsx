@@ -1,7 +1,7 @@
 "use client";
 
 import { useParams } from "next/navigation";
-import { Conversation } from "@/app/chat/types";
+import { Conversation } from "@/features/chat/types";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,

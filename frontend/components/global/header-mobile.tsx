@@ -33,6 +33,7 @@ export function NavigationMobile({ navigationLinks }: NavigationMobileProps) {
             <Link
               key={item.href}
               href={item.href}
+                            prefetch={item.href !== "/chat"}
               onClick={() => setOpen(false)}
               className={cn(
                 "text-sm transition-colors hover:text-primary",

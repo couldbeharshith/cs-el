@@ -96,6 +96,7 @@ export function Header({ config }: HeaderProps) {
                         <motion.li key={item.href} className="relative flex items-center justify-center">
                           <Link
                             href={item.href}
+                            prefetch={item.href !== "/chat"}
                             className={cn(
                               "relative flex items-center justify-center rounded-full px-4 py-2 text-sm transition-colors duration-200",
                               isActive ? "text-primary font-medium" : "text-muted-foreground hover:text-primary"

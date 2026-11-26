@@ -7,7 +7,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { TavilySearchResponse, TavilySearchResult as TavilySearchResultType } from '@/app/chat/types';
+import { TavilySearchResponse, TavilySearchResult as TavilySearchResultType } from '@/features/chat/types';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 
 // The component for rendering the Tavily search results

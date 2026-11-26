@@ -1,6 +1,6 @@
 import { SidebarProvider } from "@/components/ui/sidebar";
-import { ConversationsProvider } from "./hooks/conversations-context";
-import { AppSidebar } from "./components/sidebar/app-sidebar";
+import { ConversationsProvider } from "@/features/chat/hooks/conversations-context";
+import { AppSidebar } from "@/features/chat/components/sidebar/app-sidebar";
 
 export default function ChatLayout({ children }: { children: React.ReactNode }) {
   return (
