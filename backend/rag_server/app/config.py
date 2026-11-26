@@ -144,7 +144,8 @@ class Config:
     # PERFORMANCE CONFIGURATION
     MAX_CONCURRENT_REQUESTS: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "25"))
     REQUEST_TIMEOUT: int = int(os.getenv("REQUEST_TIMEOUT", "200"))  # Increased to 200 seconds
-    MAX_DOCUMENT_SIZE_MB: int = int(os.getenv("MAX_DOCUMENT_SIZE_MB", "1024"))  # Increased to 1GB
+    MAX_DOCUMENT_SIZE_MB: int = int(os.getenv("MAX_DOCUMENT_SIZE_MB", "1024"))
+    DOCUMENT_DOWNLOAD_TIMEOUT_SECONDS: int = int(os.getenv("DOCUMENT_DOWNLOAD_TIMEOUT_SECONDS", "240"))
     MAX_QUESTIONS_PER_REQUEST: int = int(os.getenv("MAX_QUESTIONS_PER_REQUEST", "50"))
     MAX_QUESTION_LENGTH: int = int(os.getenv("MAX_QUESTION_LENGTH", "1000"))
     MAX_URL_LENGTH: int = int(os.getenv("MAX_URL_LENGTH", "2048"))

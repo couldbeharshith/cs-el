@@ -1,8 +1,7 @@
 "use client"
 
-import * as React from "react"
-import { Area, AreaChart, ResponsiveContainer, YAxis } from "recharts"
-import { ArrowUpIcon, ArrowDownIcon } from "lucide-react"
+import { Area, AreaChart, YAxis } from "recharts"
+import { TrendingDown, TrendingUp } from "lucide-react"
 
 import {
   Card,
@@ -34,7 +33,7 @@ const marketData = [
     changePercent: "0.05%",
     trend: "down" as const,
     data: sampleSeries(26215.55, 26202.95),
-    color: "hsl(0, 84%, 60%)", // Red
+    color: "hsl(0, 84%, 60%)",
   },
   {
     name: "S&P BSE Sensex",
@@ -54,7 +53,7 @@ const marketData = [
     changePercent: "0.03%",
     trend: "up" as const,
     data: sampleSeries(59737.30, 59752.7),
-    color: "hsl(173, 58%, 39%)", // Teal/Green
+    color: "hsl(173, 58%, 39%)",
   },
   {
     name: "Bitcoin",
@@ -78,8 +77,8 @@ export function MarketOverviewCharts() {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
       {marketData.map((market) => (
-        <Card key={market.name} className="flex flex-col justify-between overflow-hidden bg-card/50 border-border/50 backdrop-blur-sm hover:bg-card/80 transition-colors">
-          <CardHeader className="flex flex-row items-start justify-between space-y-0 pb-2 px-4 pt-4">
+        <Card key={market.name} className="flex flex-col justify-between overflow-hidden gap-3 bg-card py-4">
+          <CardHeader className="flex flex-row items-start justify-between space-y-0 px-4">
             <div className="space-y-1">
               <CardTitle className="text-base font-bold text-foreground">
                 {market.name}
@@ -94,7 +93,8 @@ export function MarketOverviewCharts() {
               }`}
             >
               <div className="flex items-center bg-background/20 px-1.5 py-0.5 rounded text-xs">
-                 {market.trend === "up" ? "↗" : "↘"} {market.changePercent}
+                 {market.trend === "up" ? <TrendingUp className="mr-1 size-3" aria-hidden /> : <TrendingDown className="mr-1 size-3" aria-hidden />}
+                {market.trend === "up" ? "+" : "−"}{market.changePercent}
               </div>
               <div className="mt-1">
                  {market.change}

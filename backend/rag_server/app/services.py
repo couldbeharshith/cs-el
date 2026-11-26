@@ -131,8 +131,6 @@ class DocumentService:
             ".bmp",
             ".zip",
         ]
-        # No file size limits - removed max_file_size restriction
-
         # Initialize PyMuPDF processor with markdown support
         self.pymupdf_processor = PyMuPDFProcessor(
             use_markdown=Config.USE_MARKDOWN_EXTRACTION
@@ -160,74 +158,28 @@ class DocumentService:
         )
 
     async def fetch_document(self, url: str) -> Tuple[bytes, str]:
-        """
-        Asynchronously fetch document from URL.
+        max_bytes = Config.MAX_DOCUMENT_SIZE_MB * 1024 * 1024
+        oversized = b"__FILE_TOO_LARGE__", "application/oversized"
+        timeout = aiohttp.ClientTimeout(
+            total=Config.DOCUMENT_DOWNLOAD_TIMEOUT_SECONDS,
+            connect=10,
+            sock_read=20,
+        )
 
-        Args:
-            url: Document URL to fetch
+        async with aiohttp.ClientSession(timeout=timeout) as session:
+            async with session.get(url) as response:
+                if response.status != 200:
+                    raise ValueError(f"Document server returned HTTP {response.status}")
+                if response.content_length is not None and response.content_length > max_bytes:
+                    return oversized
 
-        Returns:
-            Tuple of (document_content_bytes, detected_content_type)
+                content = bytearray()
+                async for chunk in response.content.iter_chunked(256 * 1024):
+                    if len(content) + len(chunk) > max_bytes:
+                        return oversized
+                    content.extend(chunk)
 
-        Raises:
-            Exception: If document fetching fails
-        """
-        try:
-            logger.info(f"Fetching document from URL")
-
-            async with aiohttp.ClientSession(
-                timeout=aiohttp.ClientTimeout(total=None)
-            ) as session:
-                async with session.get(url) as response:
-                    if response.status != 200:
-                        raise Exception(
-                            f"HTTP {response.status}: Failed to fetch document"
-                        )
-
-                    content_type = response.headers.get("content-type", "").lower()
-                    content_length = response.headers.get("content-length")
-
-                    # Check file size limit from config
-                    max_size_bytes = (
-                        Config.MAX_DOCUMENT_SIZE_MB * 1024 * 1024
-                    )  # Convert MB to bytes
-
-                    if content_length:
-                        file_size_bytes = int(content_length)
-                        file_size_mb = file_size_bytes / (1024 * 1024)
-
-                        logger.info(
-                            f"Document size: {file_size_mb:.2f} MB ({file_size_bytes} bytes)"
-                        )
-
-                        if file_size_bytes > max_size_bytes:
-                            logger.warning(
-                                f"Document size ({file_size_mb:.2f} MB) exceeds maximum allowed size ({Config.MAX_DOCUMENT_SIZE_MB} MB)"
-                            )
-                            # Return special indicator for oversized files instead of raising exception
-                            return b"__FILE_TOO_LARGE__", "application/oversized"
-
-                    content = await response.read()
-
-                    # Double-check actual downloaded size
-                    actual_size_bytes = len(content)
-                    actual_size_mb = actual_size_bytes / (1024 * 1024)
-
-                    if actual_size_bytes > max_size_bytes:
-                        logger.warning(
-                            f"Downloaded document size ({actual_size_mb:.2f} MB) exceeds maximum allowed size ({Config.MAX_DOCUMENT_SIZE_MB} MB)"
-                        )
-                        # Return special indicator for oversized files instead of raising exception
-                        return b"__FILE_TOO_LARGE__", "application/oversized"
-
-                    logger.info(
-                        f"Successfully fetched document: {actual_size_mb:.2f} MB ({actual_size_bytes}) bytes, type: {content_type}"
-                    )
-                    return content, content_type
-
-        except Exception as e:
-            logger.error(f"Failed to fetch document from {url}: {e}")
-            raise
+                return bytes(content), response.headers.get("content-type", "").lower()
 
     def detect_document_type(
         self, content: bytes, content_type: str = None, filename: str = None

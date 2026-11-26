@@ -1,17 +1,12 @@
-"use client"
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 
 export function MarketNarrative() {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xl font-semibold tracking-tight">Market Summary</h2>
-        <span className="text-xs text-muted-foreground">Updated 47 minutes ago</span>
-      </div>
+      <h2 className="text-xl font-semibold tracking-tight">Market summary</h2>
 
-      <Card className="bg-card/30 border-border/40 backdrop-blur-sm shadow-sm">
-        <CardContent className="p-6 space-y-6">
+      <Card className="bg-card py-0">
+        <CardContent className="space-y-5 p-4 sm:p-6">
           <div className="space-y-2">
             <h3 className="font-semibold text-foreground text-base">
               Headline indices end flat amid cautious global cues
