@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { tool } from 'ai';
+import { screenerUrl, integrationSignal } from './screener-client';
 
 const generateChartParameters = z.object({
   company_name: z.string().describe('The name of the company to generate a chart for.'),
@@ -8,9 +9,10 @@ const generateChartParameters = z.object({
 export const generateChart = tool({
   description: 'Generate a chart for a company by fetching data from the screener API.',
   parameters: generateChartParameters,
-  execute: async ({ company_name }) => {
+  execute: async ({ company_name }, { abortSignal }) => {
     try {
-      const response = await fetch('http://127.0.0.1:8080/accelerated_chart_data', {
+      const response = await fetch(screenerUrl("/accelerated_chart_data"), {
+        signal: integrationSignal(abortSignal),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

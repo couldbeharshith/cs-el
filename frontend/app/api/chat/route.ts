@@ -51,7 +51,7 @@ export async function POST(request: Request) {
       },
       maxSteps: 10,
       abortSignal: request.signal,
-      onError: ({ error }) => console.error("Chat stream failed", error),
+      onError: ({ error }) => console.error("Chat stream failed", error instanceof Error ? error.name : "Unknown error"),
       experimental_transform: smoothStream({ chunking: "word" }),
       toolCallStreaming: true,
     });

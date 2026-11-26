@@ -1,97 +1,33 @@
-# Backend API
+# Python services
 
-A FastAPI-based backend for the financial agent application.
+Use Python 3.12 and give the main backend, insurance worker, and screener their own virtual environments. Run each command from its service directory.
 
-## Installation
+| Service | Working directory | Entry point | Default port |
+| --- | --- | --- | --- |
+| RAG gateway | `backend/` | `python main.py` | 8000 |
+| Document MCP | `backend/` | `python run_mcp.py` | 8001 |
+| Computer MCP | `backend/` | `python run_computer_mcp.py` | 8002 |
+| Insurance worker | `backend/rag_server/` | `python app.py` | 7860 |
+| Screener API | `backend/screener_server/` | `python server.py` | 8080 |
 
-```bash
-# Install uv if not already installed
-pip install uv
+## Gateway and document MCP
 
-# Create a virtual environment with Python 3.12
-uv venv --python=3.12
+From `backend/`:
 
-# Install dependencies
-uv pip install -r requirements.txt
+```sh
+python -m venv .venv
+. .venv/bin/activate
+python -m pip install -r requirements-gateway.txt
+cp .env.example .env
+python main.py
 ```
 
-## Running
+Start the MCP service in another terminal with the same environment. Set `RAG_API_KEY` to the worker’s `API_KEY`. Set `RAG_SERVER_URL` to override the default worker endpoint and `MCP_SERVER_PORT` to override the MCP port. The gateway exposes `GET /`, `GET /health`, `GET /rag/health`, and `POST /rag/run`. Run the gateway and MCP fixtures with `python -m unittest discover -s tests`.
 
-```bash
-# Start the FastAPI server
-uv run main.py
-```
+Use the full `requirements.txt` for the computer MCP and offline preprocessing and retrieval scripts. The computer MCP’s Notepad and desktop workflows require Windows. See the [Windows launch scripts](START_HERE.md).
 
-The API will be available at `http://localhost:8000`
+## Insurance worker and screener
 
-## Running the MCP server (needed for the frontend chat ui)
+In `rag_server/`, install its `requirements.txt` and copy `.env.template` to `.env.rag`. Supply a worker token, a Pinecone API key and index host, and the Gemini and Groq credentials described in the [worker README](rag_server/README.md).
 
-This project ships an MCP server for tool-style integrations. It's separate from the FastAPI app and not started by `uv run main.py`.
-
-```bash
-# From backend/
-python run_mcp.py
-```
-
-By default it listens on port 8001 (see `mcp_server/config/mcp_settings.py`).
-
-## API endpoints
-
-- GET `/` — Basic info
-- GET `/health` — Quick health check
-- POST `/rag/run` — RAG endpoint (currently stubbed for external API integration)
-
-### POST /rag/run
-
-This endpoint is currently stubbed and ready for your external RAG API integration.
-
-Request body:
-
-```json
-{
-	"documents": "https://.../documents/document.pdf",
-	"questions": [
-		"What is the main topic?",
-		"What are the key points?"
-	],
-	"k": 8,
-	"processing_mode": "traditional"
-}
-```
-
-Response (development mode):
-
-```json
-{
-	"success": true,
-	"answers": ["...", "..."],
-	"processing_time": 0.01,
-	"document_metadata": {"status": "RAG API not configured"},
-	"raw_response": {"message": "This endpoint is ready for your RAG API integration"}
-}
-```
-
-## Integrating Your RAG API
-
-To integrate your own RAG API:
-
-1. Open `backend/app/api/v1/endpoints/rag.py`
-2. Replace the placeholder implementation in the `run_rag` function with your API call
-3. Update the MCP server tool in `backend/mcp_server/server.py` if needed
-
-Example integration:
-```python
-import httpx
-
-async with httpx.AsyncClient() as client:
-    response = await client.post(
-        "YOUR_RAG_API_URL",
-        json={
-            "documents": request.documents,
-            "questions": request.questions,
-            "k": request.k,
-            "processing_mode": request.processing_mode
-        }
-    )
-    return response.json()
-```
+In `screener_server/`, install its `requirements.txt`, copy `.env.example` to `.env.screener`, and supply Screener.in credentials. Install Chrome for browser-backed endpoints. Set `GOOGLE_API_KEY` for `/query_agent`. The lookup and direct chart endpoints use the Screener.in HTTP API.

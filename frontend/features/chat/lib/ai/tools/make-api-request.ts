@@ -1,5 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
+import { integrationSignal, screenerUrl } from './screener-client';
 
 export const makeApiRequestTool = tool({
   description: 'Make an HTTP API request to a specified URL. Supports GET, POST, PUT, DELETE, etc. The screener API is available at http://127.0.0.1:8080. The available endpoints are 1. POST /accelerated_concall :-this gets the concall of that company , POST /accelerated_peers : This gets peers of that company , POST /accelerated_profit_loss : This gets the profit and loss of the company , POST /accelerated_quarterly_results :- This gets the quarterly results of that company , POST /accelerated_announcements :- This gets the announcements of that company , body for all these endpoints have company_name : str' ,
@@ -13,7 +14,7 @@ export const makeApiRequestTool = tool({
     try {
       const options: RequestInit = {
         method,
-        signal: abortSignal ? AbortSignal.any([abortSignal, AbortSignal.timeout(25_000)]) : AbortSignal.timeout(25_000),
+        signal: integrationSignal(abortSignal),
         headers: {
           'Content-Type': 'application/json',
           ...headers,
@@ -24,7 +25,11 @@ export const makeApiRequestTool = tool({
         options.body = JSON.stringify(body);
       }
 
-      const response = await fetch(url, options);
+      const target = new URL(url);
+      const endpoint = target.origin === "http://127.0.0.1:8080"
+        ? screenerUrl(target.pathname + target.search)
+        : target;
+      const response = await fetch(endpoint, options);
       
       let responseData;
       const contentType = response.headers.get('content-type');

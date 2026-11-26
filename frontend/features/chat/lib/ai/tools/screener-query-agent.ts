@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { tool } from 'ai';
+import { screenerUrl, integrationSignal } from './screener-client';
 
 const screenerQueryAgentParameters = z.object({
   query: z.string().describe('The natural language query to send to the screener query agent.'),
@@ -8,9 +9,10 @@ const screenerQueryAgentParameters = z.object({
 export const screenerQueryAgent = tool({
   description: 'Query the screener agent with natural language to get intelligent analysis about companies. Use this tool when the user asks questions like "find companies with high revenue growth", "which companies have strong fundamentals", "analyze market trends", or any complex analytical query about stocks/companies that requires reasoning beyond simple data retrieval. This is the primary tool for stock screening and company analysis queries.',
   parameters: screenerQueryAgentParameters,
-  execute: async ({ query }) => {
+  execute: async ({ query }, { abortSignal }) => {
     try {
-      const response = await fetch('http://127.0.0.1:8080/query_agent', {
+      const response = await fetch(screenerUrl("/query_agent"), {
+        signal: integrationSignal(abortSignal),
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

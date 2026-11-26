@@ -122,7 +122,7 @@ RAG_API_KEY=your_bearer_token_here
 This key is used by both the Main RAG API (port 8000) and RAG MCP Server (port 8001) to authenticate with the Insurance RAG API (port 7860).
 
 ### Insurance RAG Server
-Configure the Insurance RAG server in `backend/rag_server/.env`:
+Configure the Insurance RAG server in `backend/rag_server/.env.rag`:
 - Gemini API keys (1-25)
 - Groq API keys (1-15)
 - Pinecone configuration
