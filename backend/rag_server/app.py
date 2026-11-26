@@ -10,12 +10,14 @@ import sys
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
 # Set platform environment variable for Hugging Face Spaces
-os.environ['PLATFORM'] = 'huggingface'
+os.environ.setdefault('PLATFORM', 'huggingface')
 
 # Import and run the FastAPI app
 from app.main import app
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=7860)
+    from app.config import Config
+
+    uvicorn.run(app, host=Config.HOST, port=Config.PORT)
  

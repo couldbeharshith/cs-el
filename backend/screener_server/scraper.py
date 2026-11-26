@@ -1,7 +1,9 @@
 import undetected_chromedriver as uc
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support.ui import WebDriverWait
+import os
 import time
 import requests
 import urllib.parse
@@ -9,17 +11,28 @@ import json
 from credentials import email, password
 
 url = "https://www.screener.in/login/"
+chrome_major = os.getenv("SCREENER_CHROME_MAJOR")
+version_main = int(chrome_major) if chrome_major else None
 
 def login():
-    # Specify version_main to match your Chrome browser version (143)
-    driver = uc.Chrome(headless=True, use_subprocess=False, version_main=143)
-    driver.get(url)
-    time.sleep(3)
-    driver.find_element(By.XPATH, '//*[@id="id_username"]').send_keys(email)
-    driver.find_element(By.XPATH, '//*[@id="id_password"]').send_keys(password)
-    driver.find_element(By.XPATH, '//*[@id="id_password"]').send_keys(Keys.RETURN)
-    time.sleep(5)
-    return driver
+    return sign_in(uc.Chrome(headless=True, use_subprocess=False, version_main=version_main))
+
+
+def sign_in(driver):
+    try:
+        driver.set_page_load_timeout(30)
+        driver.get(url)
+        driver.find_element(By.ID, "id_username").send_keys(email)
+        password_field = driver.find_element(By.ID, "id_password")
+        password_field.send_keys(password)
+        login_url = driver.current_url
+        password_field.send_keys(Keys.RETURN)
+        WebDriverWait(driver, 15).until(EC.url_changes(login_url))
+        return driver
+    except Exception:
+        driver.quit()
+        raise
+
 
 def login_with_network_capture():
     """Login with network request capture enabled - optimized for speed"""
@@ -49,29 +62,26 @@ def login_with_network_capture():
     options.add_argument('--disable-extensions')
     options.add_argument('--disable-blink-features=AutomationControlled')
     
-    # Specify version_main to match your Chrome browser version (143)
-    driver = uc.Chrome(options=options, use_subprocess=False, headless=True, version_main=143)
-    driver.get(url)
-    print("URL Fetched")
-    time.sleep(3) 
-    driver.find_element(By.XPATH, '//*[@id="id_username"]').send_keys(email)
-    driver.find_element(By.XPATH, '//*[@id="id_password"]').send_keys(password)
-    driver.find_element(By.XPATH, '//*[@id="id_password"]').send_keys(Keys.RETURN)
-    time.sleep(4)
-    return driver
+    driver = uc.Chrome(
+        options=options, use_subprocess=False, headless=True, version_main=version_main
+    )
+    return sign_in(driver)
+
 
 def find_company_codes(query):
-    url = f"https://www.screener.in/api/company/search/?q={query}"
-    response = requests.get(url)
-    print(response.json())
-    return response
+    return requests.get(
+        "https://www.screener.in/api/company/search/",
+        params={"q": query},
+        timeout=(5, 15),
+    )
+
 
 def get_charts(driver, company_url):
     url = f"https://www.screener.in/{company_url}#chart"
     driver.get(url)
     time.sleep(3)
     canvas = driver.find_element(By.XPATH, '//*[@id="canvas-chart-holder"]/canvas')
-    canvas.screenshot("chart.png")
+    return canvas.screenshot_as_png
 
 def get_pe_charts(driver, company_url):
     url = f"https://www.screener.in/{company_url}#chart"
@@ -79,7 +89,7 @@ def get_pe_charts(driver, company_url):
     time.sleep(3)
     driver.find_element(By.XPATH, '//*[@id="company-chart-metrics"]/button[2]').click()
     canvas = driver.find_element(By.XPATH, '//*[@id="canvas-chart-holder"]/canvas')
-    canvas.screenshot("chart.png")
+    return canvas.screenshot_as_png
 
 def get_peers(driver, company_url):
     url = f"https://www.screener.in/{company_url}"
@@ -195,7 +205,8 @@ def get_chart_data(driver, company_url):
             session.cookies.set(cookie['name'], cookie['value'])
         
         # Make request to the chart API
-        response = session.get(chart_api_url)
+        with session:
+            response = session.get(chart_api_url, timeout=(5, 15))
         if response.status_code == 200:
             return response.json()
         else:

@@ -2183,7 +2183,7 @@ class VectorService:
 
     def __init__(self):
         self.pc = Pinecone(api_key=Config.PINECONE_API_KEY)
-        self.index = self.pc.Index(Config.PINECONE_INDEX_NAME)
+        self.index = self.pc.Index(host=Config.PINECONE_HOST_URL)
         # Add semaphore for concurrent request limiting
         self._semaphore = asyncio.Semaphore(Config.MAX_CONCURRENT_REQUESTS)
 
@@ -3522,9 +3522,9 @@ class RelevanceService:
     Filters irrelevant queries before they reach expensive LLM operations.
     """
 
-    def __init__(self):
-        self.pc = Pinecone(api_key=Config.PINECONE_API_KEY)
-        self.index = self.pc.Index(Config.PINECONE_INDEX_NAME)
+    def __init__(self, index=None):
+        self.pc = Pinecone(api_key=Config.PINECONE_API_KEY) if index is None else None
+        self.index = self.pc.Index(host=Config.PINECONE_HOST_URL) if index is None else index
         self.document_relevance_threshold = Config.RELEVANCE_THRESHOLD
         self.relevance_check_enabled = Config.RELEVANCE_CHECK_ENABLED
         # Add semaphore for concurrent request limiting

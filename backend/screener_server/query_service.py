@@ -1,11 +1,11 @@
 from google import genai
-from credentials import google_api
+from google.genai.types import HttpOptions
 from schemas import Screener_Query, keywords
 from scraper import login, run_custom_query
 
 class ScreenerQueryService:
     def __init__(self, api_key: str):
-        self.client = genai.Client(api_key=api_key)
+        self.client = genai.Client(api_key=api_key, http_options=HttpOptions(timeout=30_000))
         self.system_prompt = f"""You are an expert financial analyst specializing in screener.in query generation.
 
 Your task is to convert natural language queries into precise screener.in queries that identify fundamentally strong companies.
@@ -56,5 +56,8 @@ Given the user's query, generate a screener.in query that will identify the most
     def process_query(self, user_query: str) -> str:
         screener_query_obj = self.generate_screener_query(user_query)
         print("Generated Screener Query:", screener_query_obj.screener_query)
-        output = run_custom_query(login(), screener_query_obj.screener_query)
-        return output , screener_query_obj
+        driver = login()
+        try:
+            return run_custom_query(driver, screener_query_obj.screener_query), screener_query_obj
+        finally:
+            driver.quit()

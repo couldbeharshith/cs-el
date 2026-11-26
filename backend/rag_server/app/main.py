@@ -3,9 +3,10 @@ Insurance RAG API - Main FastAPI Application
 Simplified architecture with consolidated services
 """
 
-from fastapi import FastAPI, Request, HTTPException, Header
+from fastapi import Depends, FastAPI, Request, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+from dataclasses import dataclass
 from datetime import datetime, timezone
 import logging
 import time
@@ -40,15 +41,15 @@ app_name = Config.APP_NAME
 app_version = Config.APP_VERSION
 debug_mode = Config.DEBUG
 
-# Initialize services at module level
-document_service = DocumentService()
-vector_service = VectorService()
-llm_service = LLMService()
-relevance_service = RelevanceService()
-query_expansion_service = QueryExpansionService()
+@dataclass
+class RagServices:
+    documents: DocumentService
+    vectors: VectorService
+    llm: LLMService
+    relevance: RelevanceService
+    expansion: QueryExpansionService
 
 
-# Define lifespan context manager
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """
@@ -65,24 +66,20 @@ async def lifespan(app: FastAPI):
             f"Missing required environment variables: {', '.join(missing_configs)}"
         )
 
-    # Log configuration summary (without sensitive data)
-    config_summary = Config.get_config_summary()
-    logger.info(f"Application configuration: {config_summary}")
-
-    # Initialize services
-    # Note: Relevance checking now uses document-based similarity only
-    logger.info(
-        "Services initialized - using document-based relevance checking and multi-query processing"
-    )
-    logger.info(
-        f"Direct Gemini upload enabled for supported file types < {Config.DIRECT_GEMINI_UPLOAD_THRESHOLD_MB}MB (PDF, text, HTML, images, audio, video)"
-    )
-
-    logger.info("Application startup complete and ready to serve requests")
-
-    yield
-
-    logger.info("Application shutdown complete")
+    logger.info("Application configuration: %s", Config.get_config_summary())
+    vectors = VectorService()
+    try:
+        app.state.services = RagServices(
+            documents=DocumentService(),
+            vectors=vectors,
+            llm=LLMService(),
+            relevance=RelevanceService(index=vectors.index),
+            expansion=QueryExpansionService(),
+        )
+        yield
+    finally:
+        vectors.index.close()
+        logger.info("Application shutdown complete")
 
 
 # Log startup information
@@ -176,16 +173,18 @@ async def verify_bearer_token(authorization: Optional[str] = Header(None)):
 
 
 # HackRX API endpoint
-@app.post("/api/v1/hackrx/run", response_model=HackRXResponse)
-async def hackrx_run(
-    request: HackRXRequest, authorization: Optional[str] = Header(None)
-):
-    """
-    HackRX API endpoint for processing insurance policy documents from URLs.
-
-    Requires Bearer token authentication and processes documents from URLs
-    to answer insurance policy questions with high accuracy using consolidated services.
-    """
+@app.post(
+    "/api/v1/hackrx/run",
+    response_model=HackRXResponse,
+    dependencies=[Depends(verify_bearer_token)],
+)
+async def hackrx_run(request: HackRXRequest, http_request: Request):
+    services: RagServices = http_request.app.state.services
+    document_service = services.documents
+    vector_service = services.vectors
+    llm_service = services.llm
+    relevance_service = services.relevance
+    query_expansion_service = services.expansion
     request_id = str(uuid.uuid4())
     start_time = time.time()
 
@@ -193,14 +192,7 @@ async def hackrx_run(
         f"HackRX request started: {request_id} with {len(request.questions)} questions"
     )
 
-    # Log request data for analysis
-    logger.info(f"REQUEST DATA - URL: {request.documents}")
-    logger.info(f"REQUEST DATA - Questions: {request.questions}")
-
     try:
-        # Verify authentication
-        await verify_bearer_token(authorization)
-
         # Sanitize all questions for processing
         sanitized_questions = [sanitize_input(q) for q in request.questions]
         logger.info(f"Sanitized {len(sanitized_questions)} questions for processing")
@@ -314,8 +306,6 @@ async def hackrx_run(
                 f"({successful_questions}/{len(request.questions)} questions successful)"
             )
 
-            # Log response data for analysis
-            logger.info(f"RESPONSE DATA - Image Answers: {final_answers}")
 
             return HackRXResponse(answers=final_answers)
 
@@ -408,8 +398,6 @@ async def hackrx_run(
                 f"({successful_questions}/{len(request.questions)} questions successful)"
             )
 
-            # Log response data for analysis
-            logger.info(f"RESPONSE DATA - Direct Gemini Answers: {final_answers}")
 
             return HackRXResponse(answers=final_answers)
 
@@ -584,7 +572,6 @@ async def hackrx_run(
                         await asyncio.sleep(1)  # Reduced wait time
 
                 # Step 2: Use pre-computed diverse queries
-                logger.info(f"📝 Q{question_index + 1}: {question}")
                 diverse_queries = question_to_expansion_map[question_index]
 
                 # Step 3: Multi-query vector search with integrated reranking
@@ -756,8 +743,6 @@ async def hackrx_run(
             f"document cached: {document_result.cached if document_result else 'N/A'})"
         )
 
-        # Log response data for analysis
-        logger.info(f"RESPONSE DATA - Answers: {final_answers}")
 
         return HackRXResponse(answers=final_answers)
 

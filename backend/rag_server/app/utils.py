@@ -12,6 +12,7 @@ import html
 from typing import Any, Callable, Dict, List, Optional, Union
 from urllib.parse import urlparse
 import hashlib
+from hmac import compare_digest
 import json
 from datetime import datetime
 
@@ -138,18 +139,13 @@ def validate_bearer_token(authorization_header: Optional[str]) -> bool:
     """
     from app.config import Config
     
-    if not authorization_header or not isinstance(authorization_header, str):
+    if not authorization_header or not Config.API_KEY:
         return False
-    
-    # Check Bearer token format
-    if not authorization_header.startswith('Bearer '):
-        return False
-    
-    # Extract token
-    token = authorization_header[7:].strip()  # Remove 'Bearer ' prefix
-    
-    # Validate against configured API key
-    return token == Config.API_KEY and bool(Config.API_KEY)
+    scheme, _, token = authorization_header.partition(" ")
+    return scheme.casefold() == "bearer" and compare_digest(
+        token.strip().encode(), Config.API_KEY.encode()
+    )
+
 
 
 # PERFORMANCE LOGGING UTILITIES
