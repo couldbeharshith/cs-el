@@ -3,7 +3,7 @@ import { SidebarConfig } from "@/components/global/app-sidebar";
 
 const sidebarConfig: SidebarConfig = {
   brand: {
-    title: "FinSync AI",
+    title: "Sampada AI",
     icon: Icons.shield,
     href: "/"
   },

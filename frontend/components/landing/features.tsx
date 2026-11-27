@@ -26,7 +26,7 @@ const features = [
   },
   {
     title: "Custom Knowledge Base",
-    info: "Train Sampada Ai on your specific documents and data to create a truly personalized assistant.",
+    info: "Train Sampada AI on your specific documents and data to create a truly personalized assistant.",
     icon: Settings2,
     gradient: "from-purple-500 to-violet-500",
   },
@@ -71,7 +71,7 @@ export function Features() {
           transition={{ duration: 0.5 }}
           className="mt-8 text-3xl font-bold tracking-tight text-foreground sm:text-4xl lg:text-5xl"
         >
-          Why Choose Sampada Ai?
+          Why Choose Sampada AI?
         </motion.h2>
         <motion.p 
           initial={{ opacity: 0, y: 20 }}
@@ -80,7 +80,7 @@ export function Features() {
           transition={{ duration: 0.5, delay: 0.1 }}
           className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground"
         >
-          Discover the powerful capabilities that make Sampada Ai the definitive solution for intelligent automation.
+          Discover the powerful capabilities that make Sampada AI the definitive solution for intelligent automation.
         </motion.p>
       </div>
 

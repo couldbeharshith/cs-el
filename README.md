@@ -1,6 +1,6 @@
-# FinSync AI
+# Sampada AI
 
-FinSync AI is a financial research workspace for analyzing markets, screening companies, and asking questions about insurance documents. Its chat streams model responses, displays tool results and charts, and uses Supabase for conversation history. The dashboard contains a sample Indian-market snapshot.
+Sampada AI is a financial research workspace for analyzing markets, screening companies, and asking questions about insurance documents. Its chat streams model responses, displays tool results and charts, and uses Supabase for conversation history. The dashboard contains a sample Indian-market snapshot.
 
 ## Repository layout
 

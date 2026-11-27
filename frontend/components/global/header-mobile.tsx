@@ -28,7 +28,7 @@ export function NavigationMobile({ navigationLinks }: NavigationMobileProps) {
         </Button>
       </SheetTrigger>
       <SheetContent side="right" className="w-full max-w-[300px] sm:w-[300px]">
-        <SheetHeader><SheetTitle>Navigation</SheetTitle><SheetDescription className="sr-only">FinSync AI pages</SheetDescription></SheetHeader>
+        <SheetHeader><SheetTitle>Navigation</SheetTitle><SheetDescription className="sr-only">Sampada AI pages</SheetDescription></SheetHeader>
         <nav className="flex flex-col gap-4 px-4" aria-label="Main navigation">
           {navigationLinks.map((item) => (
             <Link

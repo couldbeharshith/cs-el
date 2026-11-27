@@ -45,6 +45,7 @@ test("opens a new chat, streams and reloads it, then renames and deletes it", as
 
 test("navigates dashboard data and carries a research draft into chat", async ({ page }, testInfo) => {
   await page.goto("/dashboard");
+  await expect(page).toHaveTitle("Sampada AI");
   await expect(page.getByRole("heading", { name: "Market overview" })).toBeVisible();
   await expect(page.getByText("Sample snapshot", { exact: false })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("dashboard.png"), fullPage: true });

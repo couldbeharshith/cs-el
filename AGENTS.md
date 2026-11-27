@@ -1,4 +1,4 @@
-# Working in FinSync AI
+# Working in Sampada AI
 
 Preserve the existing chat workflows, API and MCP contracts, dashboard routes, and stored conversation compatibility. Make small, reviewable changes and verify them through the normal entry points.
 

@@ -58,7 +58,7 @@ createServer(async (request, response) => {
       response.writeHead(200, { "Content-Type": "text/event-stream" });
       const send = (delta, finish_reason = null) => {
         response.write(`data: ${JSON.stringify({
-          id: "chatcmpl-finsync", object: "chat.completion.chunk", created: 1764417600, model,
+          id: "chatcmpl-sampada", object: "chat.completion.chunk", created: 1764417600, model,
           choices: [{ index: 0, delta, finish_reason }],
         })}\n\n`);
       };

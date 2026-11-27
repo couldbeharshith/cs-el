@@ -6,7 +6,7 @@ export default function AboutPage() {
   return (
     <main className="mx-auto w-full max-w-5xl px-5 py-14 sm:px-8 sm:py-24">
       <ShieldCheck className="mb-5 size-8 text-primary" />
-      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">About FinSync AI</h1>
+      <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">About Sampada AI</h1>
       <p className="mt-4 max-w-xl text-lg leading-relaxed text-muted-foreground">
         A workspace for financial research, company screening, and insurance document analysis.
       </p>

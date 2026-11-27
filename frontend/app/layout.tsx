@@ -7,8 +7,8 @@ import { Toaster } from "@/components/ui/sonner"
 
 
 export const metadata: Metadata = {
-  title: 'FinSync AI',
-  description: 'FinSync AI - Financial Intelligence Assistant',
+  title: 'Sampada AI',
+  description: 'Sampada AI - Financial Intelligence Assistant',
 }
 
 export default function RootLayout({

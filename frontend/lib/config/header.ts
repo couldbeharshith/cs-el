@@ -17,7 +17,7 @@ export interface HeaderConfig {
 
 export const headerConfig: HeaderConfig = {
   brand: {
-    title: "FinSync AI",
+    title: "Sampada AI",
     icon: "shield"
   },
   navigationLinks: [

@@ -12,14 +12,14 @@ const features = [
   },
   {
     title: "Context-Aware Memory",
-    description: "Sampada Ai remembers previous interactions and context, allowing for continuous, meaningful conversations that evolve with your project needs.",
+    description: "Sampada AI remembers previous interactions and context, allowing for continuous, meaningful conversations that evolve with your project needs.",
     image: "/feature-memory.png",
     darkImage: "/feature-memory-dark.png",
     alt: "Context-Aware Memory",
   },
   {
     title: "Enterprise Scalability",
-    description: "Built on a robust serverless architecture, Sampada Ai scales effortlessly from individual use to enterprise-wide deployment without compromising performance.",
+    description: "Built on a robust serverless architecture, Sampada AI scales effortlessly from individual use to enterprise-wide deployment without compromising performance.",
     image: "/feature-scale.png",
     darkImage: "/feature-scale-dark.png",
     alt: "Enterprise Scalability",
@@ -42,7 +42,7 @@ export function FeatureDetails() {
           </span>
         </h2>
         <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground">
-          See how Sampada Ai transforms your daily operations with cutting-edge technology and intuitive design.
+          See how Sampada AI transforms your daily operations with cutting-edge technology and intuitive design.
         </p>
       </motion.div>
 

@@ -107,7 +107,7 @@ export function SystemFlow() {
         <div className="relative rounded-2xl bg-gradient-to-b from-muted/50 to-muted p-2 ring-1 ring-foreground/10 backdrop-blur-3xl dark:from-muted/30 dark:to-background/80">
           <Image
             src="/architecture.png"
-            alt="Sampada Ai Architecture"
+            alt="Sampada AI Architecture"
             width={1200}
             height={630}
             quality={100}

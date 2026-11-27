@@ -32,7 +32,7 @@ export function AppSidebar() {
       <SidebarHeader className="gap-5 px-4 pb-4 pt-5">
         <Link href="/dashboard" className="flex items-center gap-3 rounded-lg" onClick={() => setOpenMobile(false)}>
           <span className="grid size-9 place-items-center rounded-lg bg-primary text-primary-foreground"><ShieldCheck className="size-5" /></span>
-          <span className="font-semibold tracking-tight">{process.env.NEXT_PUBLIC_APP_NAME || "FinSync AI"}</span>
+          <span className="font-semibold tracking-tight">{process.env.NEXT_PUBLIC_APP_NAME || "Sampada AI"}</span>
         </Link>
         <Button type="button" variant="outline" className="justify-start bg-background" disabled={creating} onClick={startChat}>
           {creating ? <LoaderCircle className="animate-spin" /> : <Plus />} New chat
@@ -44,7 +44,7 @@ export function AppSidebar() {
           <Link href="/dashboard" onClick={() => setOpenMobile(false)}><LayoutDashboard /> Market dashboard</Link>
         </Button>
         <Button variant="ghost" className="justify-start" asChild>
-          <Link href="/about" onClick={() => setOpenMobile(false)}><Info /> About FinSync AI</Link>
+          <Link href="/about" onClick={() => setOpenMobile(false)}><Info /> About Sampada AI</Link>
         </Button>
       </SidebarFooter>
     </Sidebar>

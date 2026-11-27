@@ -1,8 +1,10 @@
+name: sampada-ai-e2e
+
 services:
   postgres:
     image: postgres:16-alpine
     environment:
-      POSTGRES_PASSWORD: finsync_local
+      POSTGRES_PASSWORD: sampada_local
     volumes:
       - ./init.sql:/docker-entrypoint-initdb.d/00-role.sql:ro
       - ../../lib/supabase/migrations/schema.sql:/docker-entrypoint-initdb.d/10-schema.sql:ro
@@ -17,7 +19,7 @@ services:
       postgres:
         condition: service_healthy
     environment:
-      PGRST_DB_URI: postgres://postgres:finsync_local@postgres:5432/postgres
+      PGRST_DB_URI: postgres://postgres:sampada_local@postgres:5432/postgres
       PGRST_DB_ANON_ROLE: anon
     ports:
       - "127.0.0.1:54381:3000"

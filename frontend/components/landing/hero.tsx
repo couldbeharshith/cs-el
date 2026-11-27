@@ -22,7 +22,7 @@ export function Hero() {
             className="group rounded-full border border-black/5 bg-neutral-100 text-base text-white transition-all ease-in hover:cursor-pointer hover:bg-neutral-200 dark:border-white/5 dark:bg-neutral-900 dark:hover:bg-neutral-800"
           >
             <AnimatedShinyText className="inline-flex items-center justify-center px-4 py-1 transition ease-out hover:text-neutral-600 hover:duration-300 hover:dark:text-neutral-400">
-              <span>✨ Introducing Sampada Ai</span>
+              <span>✨ Introducing Sampada AI</span>
               <ArrowRightIcon className="ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5" />
             </AnimatedShinyText>
           </Link>
@@ -32,7 +32,7 @@ export function Hero() {
       <div className="mt-10 text-center">
         <BlurFade delay={0.5} inView>
           <h1 className="mx-auto max-w-4xl text-4xl font-bold tracking-tight text-foreground sm:text-6xl lg:text-7xl">
-            Sampada Ai{" "}
+            Sampada AI{" "}
             <span className="bg-gradient-to-r from-blue-500 via-sky-500 to-cyan-500 bg-clip-text text-transparent">
               Enterprise
             </span>{" "}
@@ -41,7 +41,7 @@ export function Hero() {
         </BlurFade>
         <BlurFade delay={0.75} inView>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-muted-foreground sm:mt-8">
-            Unlock the potential of your data with Sampada Ai. 
+            Unlock the potential of your data with Sampada AI.
             Advanced neural processing, secure enterprise integration, and 
             real-time decision support for the modern business.
           </p>
@@ -84,7 +84,7 @@ export function Hero() {
           <div className="relative rounded-2xl bg-gradient-to-b from-muted/50 to-muted p-2 ring-1 ring-foreground/10 backdrop-blur-3xl dark:from-muted/30 dark:to-background/80">
             <Image
               src="/dashboard.png"
-              alt="Sampada Ai Dashboard"
+              alt="Sampada AI Dashboard"
               width={1200}
               height={630}
               quality={100}
