@@ -56,4 +56,4 @@ Use `requirements-computer.txt` for the standalone computer MCP on Windows. Use 
 
 In `rag_server/`, install its `requirements.txt`. In the root `.env`, supply the shared `RAG_API_KEY`, a Pinecone API key and index host, and the Gemini and Groq credentials described in the [worker README](rag_server/README.md).
 
-In `screener_server/`, install its `requirements.txt` and supply `SCREENER_EMAIL` and `SCREENER_PASSWORD` in the root `.env`. Install Chrome for browser-backed endpoints. Set `GOOGLE_API_KEY` for `/query_agent`. The lookup and direct chart endpoints use the Screener.in HTTP API.
+In `screener_server/`, install its `requirements.txt`. Company lookup, financial tables, peers, announcements, concalls, and chart data use public Screener.in pages or JSON endpoints. Install Chrome and set `SCREENER_EMAIL` and `SCREENER_PASSWORD` in the root `.env` for screenshots and custom queries. Set `GOOGLE_API_KEY` for `/query_agent`. From the service directory, run `python -m unittest discover -s tests` for the repeatable checks.

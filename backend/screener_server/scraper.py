@@ -1,36 +1,45 @@
 from contextlib import suppress
+import os
+from urllib.parse import urlencode
 
-import undetected_chromedriver as uc
-from selenium.common.exceptions import WebDriverException
+from selenium import webdriver
+from selenium.common.exceptions import TimeoutException, WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.support.ui import WebDriverWait
-import os
-import time
-import requests
-import urllib.parse
-import json
-from credentials import email, password
 
-url = "https://www.screener.in/login/"
-chrome_major = os.getenv("SCREENER_CHROME_MAJOR")
-version_main = int(chrome_major) if chrome_major else None
+from credentials import email, password
+from screener_http import SCREENER_ORIGIN, company_page_url
+
+
+PAGE_TIMEOUT = 12
+ELEMENT_TIMEOUT = 6
+LOGIN_URL = f"{SCREENER_ORIGIN}/login/"
+CHART = (By.CSS_SELECTOR, "#canvas-chart-holder canvas")
+QUERY_TABLE = (By.CSS_SELECTOR, "main table")
+
 
 def login():
-    return sign_in(uc.Chrome(headless=True, use_subprocess=False, version_main=version_main))
+    options = webdriver.ChromeOptions()
+    options.page_load_strategy = "eager"
+    options.add_argument("--headless=new")
+    options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+    if chrome_major := os.getenv("SCREENER_CHROME_MAJOR"):
+        options.browser_version = chrome_major
+    return sign_in(webdriver.Chrome(options=options))
 
 
 def sign_in(driver):
     try:
-        driver.set_page_load_timeout(30)
-        driver.get(url)
+        driver.set_page_load_timeout(PAGE_TIMEOUT)
+        driver.get(LOGIN_URL)
         driver.find_element(By.ID, "id_username").send_keys(email)
         password_field = driver.find_element(By.ID, "id_password")
         password_field.send_keys(password)
-        login_url = driver.current_url
+        previous = driver.current_url
         password_field.send_keys(Keys.RETURN)
-        WebDriverWait(driver, 15).until(EC.url_changes(login_url))
+        WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.url_changes(previous))
         return driver
     except Exception:
         with suppress(WebDriverException):
@@ -38,184 +47,28 @@ def sign_in(driver):
         raise
 
 
-def login_with_network_capture():
-    """Login with network request capture enabled - optimized for speed"""
-    options = uc.ChromeOptions()
-    
-    # Enable performance logging
-    options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
-    
-    # Performance optimizations
-    prefs = {
-        'profile.managed_default_content_settings.images': 2,  # Disable images
-        'profile.managed_default_content_settings.stylesheets': 2,  # Disable CSS
-        'profile.managed_default_content_settings.cookies': 1,
-        'profile.managed_default_content_settings.javascript': 1,
-        'profile.managed_default_content_settings.plugins': 2,
-        'profile.managed_default_content_settings.popups': 2,
-        'profile.managed_default_content_settings.geolocation': 2,
-        'profile.managed_default_content_settings.notifications': 2,
-        'profile.managed_default_content_settings.media_stream': 2,
-    }
-    options.add_experimental_option('prefs', prefs)
-    
-    # Additional speed optimizations
-    options.add_argument('--disable-gpu')
-    options.add_argument('--disable-dev-shm-usage')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-extensions')
-    options.add_argument('--disable-blink-features=AutomationControlled')
-    
-    driver = uc.Chrome(
-        options=options, use_subprocess=False, headless=True, version_main=version_main
-    )
-    return sign_in(driver)
-
-
-def find_company_codes(query):
-    return requests.get(
-        "https://www.screener.in/api/company/search/",
-        params={"q": query},
-        timeout=(5, 15),
-    )
-
-
 def get_charts(driver, company_url):
-    url = f"https://www.screener.in/{company_url}#chart"
-    driver.get(url)
-    time.sleep(3)
-    canvas = driver.find_element(By.XPATH, '//*[@id="canvas-chart-holder"]/canvas')
+    driver.get(company_page_url(company_url) + "#chart")
+    canvas = WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.visibility_of_element_located(CHART))
     return canvas.screenshot_as_png
+
 
 def get_pe_charts(driver, company_url):
-    url = f"https://www.screener.in/{company_url}#chart"
-    driver.get(url)
-    time.sleep(3)
-    driver.find_element(By.XPATH, '//*[@id="company-chart-metrics"]/button[2]').click()
-    canvas = driver.find_element(By.XPATH, '//*[@id="canvas-chart-holder"]/canvas')
+    driver.get(company_page_url(company_url) + "#chart")
+    wait = WebDriverWait(driver, ELEMENT_TIMEOUT)
+    button = wait.until(EC.element_to_be_clickable((By.XPATH, '//*[@id="company-chart-metrics"]//button[normalize-space()="PE Ratio"]')))
+    button.click()
+    canvas = wait.until(EC.visibility_of_element_located(CHART))
     return canvas.screenshot_as_png
 
-def get_peers(driver, company_url):
-    url = f"https://www.screener.in/{company_url}"
-    driver.get(url)
-    time.sleep(3)
-    peers_table = driver.find_element(By.XPATH, '//*[@id="peers-table-placeholder"]')
-    return peers_table.text
-
-def get_quarterly_results(driver, company_url):
-    url = f"https://www.screener.in/{company_url}/#quarters"
-    driver.get(url)
-    time.sleep(5)
-    quarterly_results = driver.find_element(By.XPATH, '//*[@id="quarters"]')
-    print(quarterly_results.text)
-    return quarterly_results.text
-
-def get_profit_loss(driver, company_url):
-    url = f"https://www.screener.in/{company_url}"
-    driver.get(url)
-    time.sleep(3)
-    profit_loss = driver.find_element(By.XPATH, '//*[@id="profit-loss"]')
-    print(profit_loss.text)
-    return profit_loss.text
-
-def get_announcements(driver, company_url):
-    url = f"https://www.screener.in/{company_url}"
-    driver.get(url)
-    time.sleep(3)
-    driver.find_element(By.XPATH, '//*[@id="documents"]/div[2]/div[4]/div[2]/button/i').click()
-    time.sleep(2)
-    announcements = driver.find_element(By.XPATH, '//*[@id="documents"]/div[2]/div[1]/div')
-    print(announcements.text)
-    return announcements.text
-
-def get_concalls(driver, company_url):
-    url = f"https://www.screener.in/{company_url}"
-    driver.get(url)
-    time.sleep(3)
-    concalls = driver.find_element(By.XPATH, '//*[@id="documents"]/div[2]/div[4]')
-    links = concalls.find_elements(By.TAG_NAME, 'a')
-    download_links = []
-    for link in links:
-        href = link.get_attribute('href')
-        if href:
-            download_links.append(href)
-    return download_links
 
 def run_custom_query(driver, query):
-    encoded_query = urllib.parse.quote(query)
-    url = f"https://www.screener.in/screen/raw/?query={encoded_query}&limit=100"
-    driver.get(url)
-    time.sleep(8)  # Increased wait time
-    
-    try:
-        # Try specific XPath first
-        table = driver.find_element(By.XPATH, '/html/body/main/div[2]/div[4]/table')
-    except Exception:
-        print(f"Specific XPath failed. Current URL: {driver.current_url}")
-        try:
-            # Try finding any table
-            table = driver.find_element(By.TAG_NAME, 'table')
-        except Exception as e:
-            # If still fails, return a friendly error message
-            print(f"Could not find table. Page might be loading or query returned no results.")
-            return "No results found. The query might be too restrictive or the website is temporarily unavailable."
-    
-    print(table.text)
-    return table.text
+    params = urlencode({"query": query, "limit": 100})
+    driver.get(f"{SCREENER_ORIGIN}/screen/raw/?{params}")
+    if "/login/" in driver.current_url or "/register/" in driver.current_url:
+        raise WebDriverException("Screener session expired")
 
-def get_chart_data(driver, company_url):
-    """
-    Intercept network requests to get chart API data
-    Returns the JSON data from the chart API endpoint
-    """
-    # Navigate to the company page
-    full_url = f"https://www.screener.in/{company_url}"
-    driver.get(full_url)
-    
-    # Wait for API calls with shorter timeout
-    time.sleep(2)  # Reduced from 5
-    
-    # Get performance logs to capture network requests
-    logs = driver.get_log('performance')
-    
-    chart_api_url = None
-    
-    # Parse logs to find chart API requests (optimized - break early)
-    for log in logs:
-        try:
-            log_data = json.loads(log['message'])
-            message = log_data.get('message', {})
-            method = message.get('method', '')
-            
-            # Look for network response received events
-            if method == 'Network.responseReceived':
-                params = message.get('params', {})
-                response = params.get('response', {})
-                request_url = response.get('url', '')
-                
-                # Check if this is a chart API request
-                if '/api/company/' in request_url and '/chart/' in request_url:
-                    chart_api_url = request_url
-                    print(f"Found chart API URL: {chart_api_url}")
-                    break
-        except:
-            continue
-    
-    if chart_api_url:
-        # Get cookies from the driver to make authenticated request
-        cookies = driver.get_cookies()
-        session = requests.Session()
-        for cookie in cookies:
-            session.cookies.set(cookie['name'], cookie['value'])
-        
-        # Make request to the chart API
-        with session:
-            response = session.get(chart_api_url, timeout=(5, 15))
-        if response.status_code == 200:
-            return response.json()
-        else:
-            print(f"Failed to fetch chart data. Status code: {response.status_code}")
-            return None
-    else:
-        print("Chart API URL not found in network logs")
-        return None
+    try:
+        return WebDriverWait(driver, ELEMENT_TIMEOUT).until(EC.visibility_of_element_located(QUERY_TABLE)).text
+    except TimeoutException:
+        return "No results found. The query might be too restrictive or the website is temporarily unavailable."

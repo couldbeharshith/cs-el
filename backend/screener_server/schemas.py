@@ -4,7 +4,7 @@ class RequestModel(BaseModel):
     query: str
 
 class Screener_Query(BaseModel):
-    screener_query: str = Field(description="Query for screener.in, using about 5-10 (or more) queries given to you below")
+    screener_query: str = Field(min_length=1, description="Screener.in query using the requested conditions")
 
 keywords = """
 Search Query
@@ -118,7 +118,8 @@ Change in promoter holding 3Years
 Average Earnings 5Year
 Average Earnings 10Year
 Average EBIT 5Year
-Average EBIT 10YearDebt
+Average EBIT 10Year
+Debt
 Equity capital
 Preference capital
 Reserves
@@ -294,7 +295,4 @@ Operations:
 AND
 ................................
 
-Note:
-1. You must always only write queries that will screen out small/bad companies and only give fundamnetally strong companies.
-2. Stick to writing diverse queries that reflect your deep understanding of queries of screener.in
 """

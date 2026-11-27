@@ -11,14 +11,20 @@ test("opens a new chat, streams and reloads it, then renames and deletes it", as
   await page.screenshot({ path: testInfo.outputPath("chat-workspace.png") });
   const conversation = page.url();
 
-  const profile = page.getByLabel("Chat profile", { exact: true }).filter({ visible: true });
-  await profile.click();
-  await page.getByRole("option", { name: "Local LLM2" }).click();
-  await expect(profile).toHaveText("Local LLM2");
+  const model = page.getByLabel("Chat model", { exact: true });
+  await expect(model).toHaveText("OpenAI");
+  await model.press("Enter");
+  await expect(page.getByRole("option")).toHaveText(["OpenAI", "Gemini", "Groq"]);
+  const search = page.getByPlaceholder("Search model...");
+  await search.fill("Gem");
+  await expect(page.getByRole("option", { name: "Gemini" })).toHaveAttribute("aria-selected", "true");
+  await search.press("Enter");
+  await expect(model).toHaveText("Gemini");
 
   const prompt = `Policy verification ${Date.now()}`;
   await page.getByRole("textbox", { name: "Message" }).fill(prompt);
   await page.getByRole("button", { name: "Send message" }).click();
+  await expect(page.getByRole("button", { name: "Stop response" })).toBeVisible();
   await expect(page.getByRole("article", { name: "Assistant response" }).getByText("documented exclusions", { exact: true }).filter({ visible: true })).toBeVisible();
   await expect.poll(async () => {
     const result = await page.request.get(`http://127.0.0.1:4316/rest/v1/messages?conversation_id=eq.${conversation.split("/").at(-1)}`);
@@ -73,22 +79,51 @@ test("shows provider failures and transcribes a recording", async ({ page }) => 
   await expect(composer).toHaveValue("Fixture voice transcription");
 });
 
+test("streams with Groq and retries with OpenAI after an API key failure", async ({ page }) => {
+  await page.goto("/chat", { waitUntil: "networkidle" });
+  const model = page.getByLabel("Chat model", { exact: true });
+  await model.click();
+  await page.getByRole("option", { name: "Groq" }).click();
+  const composer = page.getByRole("textbox", { name: "Message" });
+  await composer.fill("Fixture Groq response");
+  await composer.press("Enter");
+  const responses = page.getByRole("article", { name: "Assistant response" });
+  await expect(responses.first().getByText("documented exclusions", { exact: true })).toBeVisible();
+
+  await composer.fill("Fixture Groq error");
+  await page.getByRole("button", { name: "Send message" }).click();
+  const alert = page.getByRole("alert").filter({ hasText: "Groq rejected its API key" });
+  await expect(alert).toBeVisible();
+  await model.click();
+  await page.getByRole("option", { name: "OpenAI" }).click();
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await expect(responses.nth(1).getByText("documented exclusions", { exact: true })).toBeVisible();
+  await expect(alert).toHaveCount(0);
+});
+
 test("rejects invalid chat and transcription input", async ({ request }) => {
   expect((await request.post("/api/chat", { data: { messages: [] } })).status()).toBe(400);
   expect((await request.post("/api/transcribe", { multipart: { other: "empty" } })).status()).toBe(400);
 });
 
-test("renders and persists a chart tool result", async ({ page }) => {
-  await page.goto("/chat");
-  const composer = page.getByRole("textbox", { name: "Message" });
-  await composer.fill("Chart fixture company");
-  await page.getByRole("button", { name: "Send message" }).click();
-  const result = page.getByRole("button", { name: "Chart generation results" });
-  await expect(result).toBeVisible();
-  await result.click();
-  await expect(page.getByText("Fixture company performance", { exact: true })).toBeVisible();
-  await expect(page.locator(".recharts-line-curve")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Stop response" })).toHaveCount(0);
-  await page.reload();
-  await expect(result).toBeVisible();
-});
+for (const provider of ["OpenAI", "Gemini", "Groq"]) {
+  test(`renders and persists a chart tool result with ${provider}`, async ({ page }) => {
+    await page.goto("/chat", { waitUntil: "networkidle" });
+    if (provider !== "OpenAI") {
+      await page.getByLabel("Chat model", { exact: true }).click();
+      await page.getByRole("option", { name: provider }).click();
+    }
+    const composer = page.getByRole("textbox", { name: "Message" });
+    await composer.fill("Chart fixture company");
+    await page.getByRole("button", { name: "Send message" }).click();
+    const result = page.getByRole("button", { name: "Chart generation results" });
+    await expect(result).toBeVisible();
+    await result.click();
+    await expect(page.getByText("Fixture company performance", { exact: true })).toBeVisible();
+    await expect(page.locator(".recharts-line-curve")).toBeVisible();
+    await expect(page.getByRole("article", { name: "Assistant response" }).getByText("documented exclusions", { exact: true })).toBeVisible();
+    await expect(page.getByRole("button", { name: "Stop response" })).toHaveCount(0);
+    await page.reload();
+    await expect(result).toBeVisible();
+  });
+}

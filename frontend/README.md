@@ -9,11 +9,19 @@ npm ci
 npm run dev
 ```
 
-The `app/` directory owns routes and request handlers. The chat workspace is in `features/chat/`, shared UI is in `components/`, and database access is in `lib/supabase/`. The three default profiles use the same OpenAI model with different system prompts.
+The `app/` directory owns routes and request handlers. The chat workspace is in `features/chat/`, shared UI is in `components/`, and database access is in `lib/supabase/`.
+
+Chat defaults to OpenAI. Set the API key for each provider you use in the repository-root `.env`.
+
+| Chat option | Model | Environment variable |
+| --- | --- | --- |
+| OpenAI | GPT-6 Luna | `OPENAI_API_KEY` |
+| Gemini | Gemini 3.8 Flash | `GOOGLE_GENERATIVE_AI_API_KEY` |
+| Groq | GPT-OSS 120B | `GROQ_API_KEY` |
 
 ## Browser tests
 
-The suite runs Chromium in desktop and mobile configurations. It uses a real Postgres database and the checked-in schema through PostgREST, plus a local HTTP fixture for streaming and transcription. The suite creates disposable conversations.
+The suite runs Chromium in desktop and mobile configurations. It uses a real Postgres database and the checked-in schema through PostgREST, plus local HTTP fixtures for the three chat providers and transcription. The suite creates disposable conversations.
 
 ```sh
 npx playwright install chromium

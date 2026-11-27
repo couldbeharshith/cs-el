@@ -11,13 +11,14 @@ import {
   CommandGroup,
   CommandInput,
   CommandItem,
+  CommandList,
 } from "@/components/ui/command"
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover"
-import { Drawer, DrawerContent, DrawerTrigger } from "@/components/ui/drawer"
+import { Drawer, DrawerContent, DrawerTitle, DrawerTrigger } from "@/components/ui/drawer"
 import { useIsMobile } from "@/hooks/use-mobile"
 
 interface Model {
@@ -36,6 +37,34 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
   const isMobile = useIsMobile()
 
   const selectedModelLabel = models.find(model => model.value === selectedModel)?.label
+  const modelOptions = (
+    <Command label="Search models">
+      <CommandInput placeholder="Search model..." className="h-9" />
+      <CommandList label="Chat models">
+        <CommandEmpty>No model found.</CommandEmpty>
+        <CommandGroup>
+          {models.map((model) => (
+            <CommandItem
+              key={model.value}
+              value={model.value}
+              onSelect={() => {
+                setSelectedModel(model.value)
+                setOpen(false)
+              }}
+            >
+              {model.label}
+              <CheckIcon
+                className={cn(
+                  "ml-auto h-4 w-4",
+                  selectedModel === model.value ? "opacity-100" : "opacity-0"
+                )}
+              />
+            </CommandItem>
+          ))}
+        </CommandGroup>
+      </CommandList>
+    </Command>
+  )
 
   if (!isMobile) {
     return (
@@ -44,7 +73,7 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
           <Button
             variant="ghost"
             type="button"
-            aria-label="Chat profile"
+            aria-label="Chat model"
             role="combobox"
             aria-expanded={open}
             className="w-auto justify-between text-muted-foreground hover:text-foreground"
@@ -54,30 +83,7 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-[200px] p-0">
-          <Command>
-            <CommandInput placeholder="Search model..." className="h-9" />
-            <CommandEmpty>No model found.</CommandEmpty>
-            <CommandGroup>
-              {models.map((model) => (
-                <CommandItem
-                  key={model.value}
-                  value={model.value}
-                  onSelect={(currentValue) => {
-                    setSelectedModel(currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  {model.label}
-                  <CheckIcon
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      selectedModel === model.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          {modelOptions}
         </PopoverContent>
       </Popover>
     )
@@ -86,37 +92,15 @@ export function ModelSelector({ models, selectedModel, setSelectedModel }: Model
   return (
     <Drawer open={open} onOpenChange={setOpen}>
       <DrawerTrigger asChild>
-        <Button type="button" aria-label="Chat profile" variant="ghost" className="w-auto justify-between text-muted-foreground hover:text-foreground">
+        <Button type="button" aria-label="Chat model" variant="ghost" className="w-auto justify-between text-muted-foreground hover:text-foreground">
           {selectedModelLabel}
           <CaretSortIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </DrawerTrigger>
-      <DrawerContent aria-label="Choose a chat profile">
+      <DrawerContent aria-describedby={undefined}>
+        <DrawerTitle className="sr-only">Choose a chat model</DrawerTitle>
         <div className="mt-4 border-t">
-          <Command>
-            <CommandInput placeholder="Search model..." />
-            <CommandEmpty>No model found.</CommandEmpty>
-            <CommandGroup>
-              {models.map((model) => (
-                <CommandItem
-                  key={model.value}
-                  value={model.value}
-                  onSelect={(currentValue) => {
-                    setSelectedModel(currentValue)
-                    setOpen(false)
-                  }}
-                >
-                  {model.label}
-                  <CheckIcon
-                    className={cn(
-                      "ml-auto h-4 w-4",
-                      selectedModel === model.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </Command>
+          {modelOptions}
         </div>
       </DrawerContent>
     </Drawer>

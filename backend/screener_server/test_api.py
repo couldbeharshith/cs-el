@@ -1,16 +1,16 @@
 import requests
-import time
+import os
 
-BASE_URL = "http://127.0.0.1:8000"
+BASE_URL = os.getenv("SCREENER_API_URL", "http://127.0.0.1:8080").rstrip("/")
 
 def test_endpoint(method, endpoint, data=None, description=""):
     url = f"{BASE_URL}{endpoint}"
     print(f"Testing {description} ({method} {url})...")
     try:
         if method == "GET":
-            response = requests.get(url)
+            response = requests.get(url, timeout=30)
         elif method == "POST":
-            response = requests.post(url, json=data)
+            response = requests.post(url, json=data, timeout=30)
         
         if response.status_code == 200:
             print(f"✓ SUCCESS: {description}")
@@ -39,7 +39,7 @@ def main():
     # Test search
     search_response = test_endpoint("GET", "/search/Tata", description="Search Company")
     
-    company_url = "company/tata-steel/500470/"
+    company_url = "company/TATASTEEL/consolidated/"
     if search_response and search_response.json():
         results = search_response.json()
         if results and isinstance(results, list) and len(results) > 0:

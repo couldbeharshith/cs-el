@@ -3,8 +3,13 @@ node_modules/
 .pnp
 .pnp.js
 
+# Local Bun lockfiles. The frontend uses package-lock.json.
+/frontend/bun.lock
+/frontend/bun.lockb
+
 # Testing
 coverage/
+.pytest_cache/
 
 # Next.js
 .next/
@@ -20,13 +25,9 @@ yarn-error.log*
 
 # Environment variables
 .env
-.env.rag
-.env.screener
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.*
 *.env
+!.env.example
 
 # Python
 __pycache__/
@@ -63,7 +64,6 @@ backend/results/
 backend/Policy documents/
 *.db
 *.sqlite
-
 
 # Browser test output
 playwright-report/

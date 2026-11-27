@@ -1,4 +1,4 @@
-import { convertToCoreMessages, streamText, smoothStream, type Message } from "ai";
+import { APICallError, RetryError, convertToCoreMessages, streamText, smoothStream, type Message } from "ai";
 import { z } from "zod";
 import { getSystemPrompt } from "@/features/chat/lib/ai/prompts/system-prompt";
 import { querySupabaseTool } from "@/features/chat/lib/ai/tools/query-supabase";
@@ -6,7 +6,8 @@ import { generateChart } from "@/features/chat/lib/ai/tools/generate-chart";
 import { exaSearchTool } from "@/features/chat/lib/ai/tools/exa-search";
 import { makeApiRequestTool } from "@/features/chat/lib/ai/tools/make-api-request";
 import { screenerQueryAgent } from "@/features/chat/lib/ai/tools/screener-query-agent";
-import { myProvider } from "@/features/chat/lib/ai/providers/providers";
+import { resolveModelId } from "@/features/chat/lib/ai/models";
+import { getChatModel } from "@/features/chat/lib/ai/providers/providers";
 import { getAllMCPTools } from "@/features/chat/lib/simple-mcp-manager";
 import { getUser } from "@/features/chat/hooks/get-user";
 
@@ -26,19 +27,23 @@ export async function POST(request: Request) {
     return Response.json({ error: "A model and at least one user message are required." }, { status: 400 });
   }
 
-  const { messages, selectedModel } = input.data;
-  if ((selectedModel.startsWith("local-llm") || selectedModel.startsWith("gpt-")) && !process.env.OPENAI_API_KEY) {
-    return Response.json({ error: "Chat needs an OpenAI API key for this profile." }, { status: 503 });
-  }
+  const { messages } = input.data;
+  const selectedModel = resolveModelId(input.data.selectedModel);
 
   try {
+    const { model, label, key } = getChatModel(selectedModel);
+    if (key && !process.env[key]?.trim()) {
+      return Response.json({ error: `${label} needs an API key. Set ${key} on the server.` }, { status: 503 });
+    }
+
     const [system, mcpTools] = await Promise.all([
       getUser().then((user) => getSystemPrompt(user, selectedModel)),
       getAllMCPTools(),
     ]);
 
     const result = streamText({
-      model: myProvider.languageModel(selectedModel),
+      model,
+      providerOptions: selectedModel === "openai" ? { openai: { strictSchemas: false, store: false } } : undefined,
       system,
       messages: convertToCoreMessages(messages as Omit<Message, "id">[]),
       tools: {
@@ -51,16 +56,40 @@ export async function POST(request: Request) {
       },
       maxSteps: 10,
       abortSignal: request.signal,
-      onError: ({ error }) => console.error("Chat stream failed", error instanceof Error ? error.name : "Unknown error"),
+      onError: ({ error }) => console.error("Chat stream failed", {
+        provider: label,
+        status: providerStatus(error),
+        error: error instanceof Error ? error.name : "Unknown error",
+      }),
       experimental_transform: smoothStream({ chunking: "word" }),
       toolCallStreaming: true,
     });
 
     return result.toDataStreamResponse({
-      getErrorMessage: () => "The model or a connected tool could not finish responding.",
+      getErrorMessage: (error) => JSON.stringify({ error: chatStreamError(error, label, key) }),
     });
   } catch (error) {
-    console.error("Chat request failed", error);
+    console.error("Chat request failed", error instanceof Error ? error.name : "Unknown error");
     return Response.json({ error: "Couldn’t start a response. Please try again." }, { status: 502 });
+  }
+}
+
+function providerStatus(error: unknown) {
+  const cause = RetryError.isInstance(error) ? error.lastError : error;
+  return APICallError.isInstance(cause) ? cause.statusCode : undefined;
+}
+
+function chatStreamError(error: unknown, label: string, key?: string) {
+  switch (providerStatus(error)) {
+    case 401:
+      return key ? `${label} rejected its API key. Check ${key} on the server.` : `${label} rejected the credentials.`;
+    case 403:
+      return `${label} denied access. Check that the configured credentials can use this model.`;
+    case 404:
+      return `${label} could not find the configured model.`;
+    case 429:
+      return `${label} reached a rate or quota limit. Check your provider account or try again later.`;
+    default:
+      return "The model or a connected tool could not finish responding.";
   }
 }

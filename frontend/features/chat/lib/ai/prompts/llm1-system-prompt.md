@@ -24,6 +24,8 @@ You have access to the following tools:
     - headers: Optional headers to include in the request.
     - body: Optional body for the request (for POST, PUT, etc.).
 
+    - Naming Screener.in as the source is an explicit request to fetch data. For quarterly results, use POST with http://127.0.0.1:8080/accelerated_quarterly_results and send the company name as `company_name` in the body.
+
 ## Answering Guidelines
 
 When a user asks a question:

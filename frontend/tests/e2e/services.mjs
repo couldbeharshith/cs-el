@@ -1,8 +1,11 @@
 import { createServer } from "node:http";
 import { Readable } from "node:stream";
+import { setTimeout as delay } from "node:timers/promises";
 
 const port = Number(process.env.E2E_SERVICES_PORT ?? 4316);
 const restUrl = process.env.E2E_POSTGREST_URL ?? "http://127.0.0.1:54381";
+const answer = ["Fixture response. ", "The sample policy has ", "**documented exclusions**."];
+const chartCall = { name: "generateChart", args: { company_name: "Fixture Company" } };
 
 createServer(async (request, response) => {
   try {
@@ -46,38 +49,73 @@ createServer(async (request, response) => {
       return;
     }
 
-    if (path === "/v1/chat/completions") {
+    if (path === "/v1/responses") {
+      const { model, input, tools, store, temperature } = JSON.parse(await readBody(request));
+      if (model !== "gpt-6-luna" || store !== false || temperature !== undefined || tools.some((tool) => tool.strict === true)) {
+        return reject(response, 400, "Invalid OpenAI configuration");
+      }
+      const prompt = input.filter((message) => message.role === "user").at(-1)?.content[0]?.text;
+      if (prompt === "Fixture provider error") return reject(response, 400, "Fixture provider rejected the request");
+      const send = eventStream(response);
+      send({ type: "response.created", response: { id: "resp_fixture", created_at: 1764417600, model } });
+      if (prompt === "Chart fixture company" && !input.some((item) => item.type === "function_call_output")) {
+        const item = { type: "function_call", id: "fc_fixture", call_id: "call_chart", name: chartCall.name };
+        send({ type: "response.output_item.added", output_index: 0, item: { ...item, arguments: "" } });
+        send({ type: "response.output_item.done", output_index: 0, item: {
+          ...item, arguments: JSON.stringify(chartCall.args), status: "completed",
+        } });
+      } else {
+        await sendAnswer((delta) => send({ type: "response.output_text.delta", delta }));
+      }
+      send({ type: "response.completed", response: { usage: { input_tokens: 10, output_tokens: 20 } } });
+      response.end();
+      return;
+    }
+
+    if (path === "/gemini/models/gemini-3.8-flash:streamGenerateContent?alt=sse") {
+      const { contents, tools } = JSON.parse(await readBody(request));
+      const apiTool = tools?.[0]?.functionDeclarations.find((tool) => tool.name === "makeApiRequest");
+      if (!apiTool?.parametersJsonSchema?.properties?.body?.additionalProperties) {
+        return reject(response, 400, "Missing Gemini tool schema");
+      }
+      const parts = contents.flatMap((content) => content.parts);
+      const needsChart = parts.some((part) => part.text === "Chart fixture company");
+      const toolResults = parts.some((part) => part.functionResponse);
+      if (toolResults && !parts.some((part) => part.functionCall?.name === chartCall.name && part.thoughtSignature === "fixture-signature")) {
+        return reject(response, 400, "Missing Gemini thought signature");
+      }
+      const send = eventStream(response);
+      if (needsChart && !toolResults) {
+        send({ candidates: [{ content: { parts: [{ functionCall: chartCall, thoughtSignature: "fixture-signature" }] } }] });
+      } else {
+        await sendAnswer((text) => send({ candidates: [{ content: { parts: [{ text }] } }] }));
+      }
+      send({ candidates: [{ finishReason: "STOP" }], usageMetadata: { promptTokenCount: 10, candidatesTokenCount: 20 } });
+      response.end();
+      return;
+    }
+
+    if (path === "/groq/chat/completions") {
       const { model, messages } = JSON.parse(await readBody(request));
-      const content = messages.filter((message) => message.role === "user").at(-1)?.content;
-      const prompt = Array.isArray(content) ? content.map((part) => part.text).join("") : content;
-      if (prompt === "Fixture provider error") {
-        response.writeHead(400, { "Content-Type": "application/json" });
-        response.end(JSON.stringify({ error: { message: "Fixture provider rejected the request" } }));
-        return;
-      }
-      response.writeHead(200, { "Content-Type": "text/event-stream" });
-      const send = (delta, finish_reason = null) => {
-        response.write(`data: ${JSON.stringify({
-          id: "chatcmpl-sampada", object: "chat.completion.chunk", created: 1764417600, model,
-          choices: [{ index: 0, delta, finish_reason }],
-        })}\n\n`);
-      };
-      const words = ["Fixture response. ", "The sample policy has ", "**documented exclusions**."];
-      send({ role: "assistant" });
+      if (model !== "openai/gpt-oss-120b") return reject(response, 404, "Unexpected Groq model");
+      const prompt = messages.filter((message) => message.role === "user").at(-1)?.content;
+      if (prompt === "Fixture Groq error") return reject(response, 401, "Fixture API key rejected");
+      const send = eventStream(response);
+      const chunk = (delta, finish_reason = null) => send({
+        id: "chatcmpl-sampada", object: "chat.completion.chunk", created: 1764417600, model,
+        choices: [{ index: 0, delta, finish_reason }],
+      });
+      chunk({ role: "assistant" });
       if (prompt === "Chart fixture company" && !messages.some((message) => message.role === "tool")) {
-        send({ tool_calls: [{
+        chunk({ tool_calls: [{
           index: 0, id: "call_chart", type: "function",
-          function: { name: "generateChart", arguments: '{"company_name":"Fixture Company"}' },
+          function: { name: chartCall.name, arguments: JSON.stringify(chartCall.args) },
         }] });
-        send({}, "tool_calls");
-        response.end("data: [DONE]\n\n");
-        return;
+        chunk({}, "tool_calls");
+      } else {
+        await sendAnswer((content) => chunk({ content }));
+        chunk({}, "stop");
       }
-      for (const word of words) {
-        await new Promise((resolve) => setTimeout(resolve, 75));
-        send({ content: word });
-      }
-      send({}, "stop");
       response.end("data: [DONE]\n\n");
       return;
     }
@@ -99,4 +137,21 @@ async function readBody(request) {
   const chunks = [];
   for await (const chunk of request) chunks.push(chunk);
   return Buffer.concat(chunks);
+}
+
+function eventStream(response) {
+  response.writeHead(200, { "Content-Type": "text/event-stream" });
+  return (data) => response.write(`data: ${JSON.stringify(data)}\n\n`);
+}
+
+function reject(response, status, message) {
+  response.writeHead(status, { "Content-Type": "application/json" });
+  response.end(JSON.stringify({ error: { message } }));
+}
+
+async function sendAnswer(send) {
+  for (const part of answer) {
+    await delay(75);
+    send(part);
+  }
 }
