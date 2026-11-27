@@ -33,9 +33,15 @@ All services in this checkout read the root `.env`, and process environment vari
 
 ## Run backend integrations
 
-Use Python 3.12 and a separate virtual environment for each requirements file. See [backend setup](backend/README.md) for per-service launch instructions and [Windows scripts](backend/START_HERE.md) for starting all services together. See [insurance RAG setup](backend/rag_server/README.md) and [RAG API examples](backend/rag_server/usage.md) for document types and credentials.
+With `uv` installed and the repository-root `.env` configured, run this from the repository root:
 
-The Next.js chat API calls model providers directly. It discovers document and computer tools via MCP and calls the screener service for company analysis. The main FastAPI gateway and document MCP both forward document requests to the insurance RAG service. Keep computer automation on a trusted Windows host.
+```sh
+uv run --script backend/serve.py
+```
+
+The launcher prepares the Python 3.12 environments, starts the local backend in one terminal, and reports when it is ready. Press Ctrl+C to stop the stack. See [backend setup](backend/README.md) for credentials, ports, and options.
+
+The Next.js chat API calls model providers directly. It discovers document and computer tools via MCP and calls the screener service for company analysis. The main FastAPI gateway and document MCP both forward document requests to the insurance RAG service. Computer MCP runs on a trusted Windows host and listens on loopback.
 
 ## Verify changes
 

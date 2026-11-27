@@ -1,6 +1,33 @@
 # Python services
 
-Use Python 3.12 and give the main backend, insurance worker, and screener their own virtual environments. Copy [the shared template](../.env.example) to `.env` at the repository root and fill in the credentials for the services you use. Run each command from its service directory.
+Install `uv`, copy [the shared template](../.env.example) to `.env` at the repository root, and fill in the credentials for the services you use. From the repository root:
+
+```sh
+uv run --script backend/serve.py
+```
+
+The launcher installs each service's Python 3.12 dependencies into `backend/.venv-services/` on the first run. It starts the stack in one terminal, waits for each endpoint to respond, and stops the services it started when you press Ctrl+C or when a service exits. All local listeners bind to `127.0.0.1`.
+
+| Local endpoint | Default port | Port setting |
+| --- | --- | --- |
+| RAG gateway | 8000 | `BACKEND_PORT` |
+| Document MCP at `/mcp` | 8001 | `MCP_SERVER_PORT` |
+| Computer MCP at `/mcp` (Windows) | 8002 | `COMPUTER_MCP_PORT` |
+| Insurance worker | 7860 | `RAG_WORKER_PORT` |
+| Screener API | 8080 | `SCREENER_PORT` |
+
+The frontend's existing defaults work with these ports. If you change a frontend-facing port, update `RAG_MCP_URL`, `COMPUTER_MCP_URL`, or `SCREENER_API_URL` in the root `.env` as applicable. Set `RAG_SERVER_URL` to use a remote insurance worker. Otherwise the gateway and document MCP use the worker started by the launcher.
+
+- Use `--without-worker` with a remote insurance worker, or when working on features that do not use insurance RAG.
+- Use `--without-computer` to skip Windows desktop tools.
+- Use `--check` to start the stack, verify readiness, and shut it down. Readiness probes check the local endpoints without making application requests to external providers.
+- Use `--setup-only` to prepare dependencies in advance.
+
+The PowerShell and Batch start scripts also run the same launcher. If a port is occupied, stop the older service in its terminal or change the corresponding port setting.
+
+## Standalone services
+
+For debugging or deployment, use Python 3.12 with the requirements for the service you are running. Run the entry point from its service directory.
 
 | Service | Working directory | Entry point | Default port |
 | --- | --- | --- | --- |
@@ -23,7 +50,7 @@ python main.py
 
 Start the MCP service in another terminal with the same environment. Set `RAG_API_KEY` to the bearer token shared with the insurance worker. Set `RAG_SERVER_URL` to override the default worker endpoint and `MCP_SERVER_PORT` to override the MCP port. The gateway exposes `GET /`, `GET /health`, `GET /rag/health`, and `POST /rag/run`. Run the gateway and MCP fixtures with `python -m unittest discover -s tests`.
 
-Use the full `requirements.txt` for the computer MCP and offline preprocessing and retrieval scripts. The computer MCP’s Notepad and desktop workflows require Windows. See the [Windows launch scripts](START_HERE.md).
+Use `requirements-computer.txt` for the standalone computer MCP on Windows. Use the full `requirements.txt` for offline preprocessing and retrieval scripts.
 
 ## Insurance worker and screener
 

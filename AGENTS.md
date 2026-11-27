@@ -10,7 +10,7 @@ Preserve the existing chat workflows, API and MCP contracts, dashboard routes, a
 - `backend/app` is the main FastAPI gateway and contains retrieval, vector-store, and decision-tree code.
 - `backend/integrations` contains shared clients for upstream services.
 - `backend/mcp_server` contains separate RAG and Windows computer MCP entry points.
-- `backend/rag_server` and `backend/screener_server` have separate Python environments and settings. Start each from its own directory so its imports and configuration resolve correctly.
+- `backend/serve.py` starts the local backend and manages its Python environments. The insurance worker and screener still run from their own directories so standalone imports and deployment entry points resolve correctly.
 - `backend/research` contains offline knowledge-graph notebooks and ingestion prototypes.
 - `backend/scripts` contains offline tooling. Keep scripts and research code usable independently of the web request path.
 
