@@ -49,6 +49,19 @@ createServer(async (request, response) => {
       return;
     }
 
+    if (path === "/v1/chat/completions") {
+      const { model, messages } = JSON.parse(await readBody(request));
+      const prompt = messages.findLast((message) => message.role === "user")?.content;
+      const example = typeof prompt === "string" && /^Policy verification (\d+) for the fixture$/.exec(prompt);
+      if (model !== "gpt-4o-mini" || !example) return reject(response, 400, "Fixture title unavailable");
+      response.writeHead(200, { "Content-Type": "application/json" }).end(JSON.stringify({
+        id: "title_fixture", created: 1764417600, model,
+        choices: [{ index: 0, message: { role: "assistant", content: "Coverage Review " + example[1] + " for Policy Details" }, finish_reason: "stop" }],
+        usage: { prompt_tokens: 10, completion_tokens: 7, total_tokens: 17 },
+      }));
+      return;
+    }
+
     if (path === "/v1/responses") {
       const { model, input, tools, store, temperature } = JSON.parse(await readBody(request));
       if (model !== "gpt-6-luna" || store !== false || temperature !== undefined || tools.some((tool) => tool.strict === true)) {

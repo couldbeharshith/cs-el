@@ -10,6 +10,9 @@ test("opens a new chat, streams and reloads it, then renames and deletes it", as
   await expect(page.getByRole("button", { name: /Notepad Summary/ })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("chat-workspace.png") });
   const conversation = page.url();
+  const favicon = await page.locator('link[rel="icon"]').first().getAttribute("href");
+  expect(favicon).toContain("/favicon.ico");
+  expect((await page.request.get(favicon!)).ok()).toBe(true);
 
   const model = page.getByLabel("Chat model", { exact: true });
   await expect(model).toHaveText("OpenAI");
@@ -21,7 +24,9 @@ test("opens a new chat, streams and reloads it, then renames and deletes it", as
   await search.press("Enter");
   await expect(model).toHaveText("Gemini");
 
-  const prompt = `Policy verification ${Date.now()}`;
+  const id = Date.now();
+  const prompt = "Policy verification " + id + " for the fixture";
+  const title = "Coverage Review " + id + " for Policy";
   await page.getByRole("textbox", { name: "Message" }).fill(prompt);
   await page.getByRole("button", { name: "Send message" }).click();
   await expect(page.getByRole("button", { name: "Stop response" })).toBeVisible();
@@ -30,17 +35,19 @@ test("opens a new chat, streams and reloads it, then renames and deletes it", as
     const result = await page.request.get(`http://127.0.0.1:4316/rest/v1/messages?conversation_id=eq.${conversation.split("/").at(-1)}`);
     return (await result.json()).length;
   }).toBe(2);
+  await openHistory(page, isMobile);
+  await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
   await page.reload({ waitUntil: "networkidle" });
   await expect(page.getByRole("article", { name: "Assistant response" }).getByText("documented exclusions", { exact: true }).filter({ visible: true })).toBeVisible();
   await page.screenshot({ path: testInfo.outputPath("chat-transcript.png") });
 
   await openHistory(page, isMobile);
-  await page.getByRole("button", { name: `Options for ${prompt}` }).click();
+  await page.getByRole("button", { name: `Options for ${title}` }).click();
   await page.getByRole("menuitem", { name: "Rename" }).click();
-  await page.getByRole("textbox", { name: "Chat title" }).fill(`Reviewed ${prompt}`);
+  await page.getByRole("textbox", { name: "Chat title" }).fill(`Reviewed ${title}`);
   await page.getByRole("button", { name: "Save title" }).click();
-  await expect(page.getByRole("link", { name: `Reviewed ${prompt}` })).toBeVisible();
-  await page.getByRole("button", { name: `Options for Reviewed ${prompt}` }).click();
+  await expect(page.getByRole("link", { name: `Reviewed ${title}` })).toBeVisible();
+  await page.getByRole("button", { name: `Options for Reviewed ${title}` }).click();
   await page.getByRole("menuitem", { name: "Delete" }).click();
   await page.getByRole("button", { name: "Delete chat" }).click();
   await expect(page).not.toHaveURL(conversation);

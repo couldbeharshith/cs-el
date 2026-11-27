@@ -9,7 +9,7 @@ import { ChatHeader } from "./chat-header";
 import { Messages } from "./messages";
 import { MultimodalInput } from "./multimodal-input";
 import { SuggestedActions } from "./suggested-actions";
-import { saveMessages } from "../actions";
+import { generateChatTitle, saveMessages } from "../actions";
 import { models } from "../lib/ai/models";
 import { useConversationsContext } from "../hooks/conversations-context";
 
@@ -70,6 +70,9 @@ export function Chat({ id, title, initialInput, initialMessages }: ChatProps) {
       }
       setInput("");
       void refreshConversations();
+      if (!messages.some((previous) => previous.role === "user")) {
+        void generateChatTitle(id).then(refreshConversations).catch(() => {});
+      }
       await append(message);
     } finally {
       sending.current = false;
