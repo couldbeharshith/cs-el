@@ -5,8 +5,9 @@ from agno.models.openai import OpenAIChat
 from ...utils.rag_helpers import RAGQueryHelper
 from ...tools.query_tool import create_query_tool
 from ...tools.write_tool import create_save_tool
-from dotenv import load_dotenv
-load_dotenv()
+from env_config import load_root_env
+
+load_root_env()
 
 
 class DecisionTreeWorkerAgent(Agent):

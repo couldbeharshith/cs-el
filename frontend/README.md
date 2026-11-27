@@ -2,9 +2,10 @@
 
 Use Node.js 22 or newer. See the [repository README](../README.md) for Supabase setup and the optional backend services.
 
+Create and fill in the repository-root `.env` from [the shared template](../.env.example), then run these commands from `frontend/`.
+
 ```sh
 npm ci
-cp env.example .env.local
 npm run dev
 ```
 

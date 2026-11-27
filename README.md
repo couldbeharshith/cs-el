@@ -17,18 +17,19 @@ Sampada AI is a financial research workspace for analyzing markets, screening co
 
 ## Run the web app
 
-Use Node.js 22 or later. From the repository root:
+Use Node.js 22 or later. From the repository root, copy the [environment template](.env.example) to `.env` with `cp .env.example .env` or, in PowerShell, `Copy-Item .env.example .env`. Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, and `OPENAI_API_KEY` in that file.
+
+For a fresh Supabase project, run the [conversation schema](frontend/lib/supabase/migrations/schema.sql) in the SQL editor. Review it against your existing schema before applying it to a populated project. The web app uses a shared demo identity, so run it in a trusted environment with synthetic data. The optional database-query tool requires the server-only `SUPABASE_ADMIN` credential and an existing `execute_sql` RPC.
 
 ```sh
 cd frontend
 npm ci
-cp env.example .env.local
 npm run dev
 ```
 
-Open [localhost:3000](http://localhost:3000). The home route opens chat. Use `/dashboard` for the market snapshot and `/about` for product information.
+Open [localhost:3000](http://localhost:3000). The home route opens chat. Use `/dashboard` for the market snapshot and `/about` for product information. Restart the web app after editing `.env` during development.
 
-For a fresh Supabase project, run the [conversation schema](frontend/lib/supabase/migrations/schema.sql) in the SQL editor. Review it against your existing schema before applying it to a populated project. Set `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` in `frontend/.env.local`. The existing web app uses a shared demo identity, so run it in a trusted environment with synthetic data. Set `OPENAI_API_KEY` for the default chat profiles and voice transcription. Set only the provider and tool credentials relevant to your setup. The optional database-query tool requires the server-only `SUPABASE_ADMIN` credential and an existing `execute_sql` RPC.
+All services in this checkout read the root `.env`, and process environment variables take priority over entries with the same name. If you're upgrading, move values from the old frontend and backend environment files into the root file, reconcile duplicate keys, and archive the old files securely. Use `RAG_API_KEY` for the local insurance worker's bearer token and rename its `HOST` and `PORT` entries to `RAG_WORKER_HOST` and `RAG_WORKER_PORT`.
 
 ## Run backend integrations
 

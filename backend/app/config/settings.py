@@ -1,7 +1,8 @@
-from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
 from typing import Optional
 import os
+
+from env_config import ROOT_ENV_FILE
 
 class Settings(BaseSettings):
     # API Configuration 
@@ -59,7 +60,7 @@ class Settings(BaseSettings):
 
 
     model_config = SettingsConfigDict(
-        env_file=Path(__file__).resolve().parents[2] / ".env", extra="ignore"
+        env_file=ROOT_ENV_FILE, extra="ignore"
     )
 
 settings = Settings()

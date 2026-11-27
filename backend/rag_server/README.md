@@ -11,6 +11,8 @@ short_description: API
 # Insurance RAG API
 
 A high-accuracy RAG-based API for processing queries from documents with URL-based document processing, Pinecone vector storage, Reranking and multiquery expansion implementation
+
+For local setup, use the repository-root `.env` from [the shared template](../../.env.example). Set `RAG_API_KEY`, `PINECONE_API_KEY`, `PINECONE_HOST_URL`, `GEMINI_API_KEY`, and `GROQ_API_KEY`. A standalone deployment can inject its settings as environment variables and use `API_KEY` for the worker's bearer token.
 ---
 
 ## Features
@@ -133,7 +135,7 @@ Health check endpoint for monitoring.
 - **Repo history:** The repo was originally hosted on Hugging Face: `https://huggingface.com/couldbeharshith/insurance-agent`. We migrated to GitHub for convenience; prior commits and the working HF endpoint are still available there.  
 - **Live endpoint (Hugging Face Spaces):**  
   `https://couldbeharshith-insurance-agent.hf.space/api/v1/hackrx/run`
-- **API Keys:** all of our free API keys are in the .env. *If you want to use a single API key, just copy paste the SAME API key for all API key variables in `.env`*
+- **API keys** use one Gemini and one Groq key by default. Add numbered keys only when you want to rotate across multiple credentials.
 
 
 ---

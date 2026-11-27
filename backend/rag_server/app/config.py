@@ -13,9 +13,9 @@ from typing import Optional, Dict, Any, List
 from pathlib import Path
 from dotenv import load_dotenv
 
-# Load environment variables from .env.rag (in the rag_server directory)
-env_path = Path(__file__).parent.parent / '.env.rag'
-load_dotenv(dotenv_path=env_path)
+backend_dir = Path(__file__).resolve().parent.parent.parent
+if backend_dir.name == "backend":
+    load_dotenv(backend_dir.parent / ".env")
 
 logger = logging.getLogger(__name__)
 
@@ -24,17 +24,17 @@ class Config:
     """Centralized configuration management class"""
     
     # CORE API CONFIGURATION
-    API_KEY: str = os.getenv("API_KEY", "")
+    API_KEY: str = os.getenv("API_KEY") or os.getenv("RAG_API_KEY", "")
     APP_NAME: str = os.getenv("APP_NAME", "Insurance RAG API")
     APP_VERSION: str = os.getenv("APP_VERSION", "4.0.0")
     DEBUG: bool = os.getenv("DEBUG", "False").lower() == "true"
-    HOST: str = os.getenv("HOST", "0.0.0.0")
-    PORT: int = int(os.getenv("PORT", "7860"))
+    HOST: str = os.getenv("RAG_WORKER_HOST") or os.getenv("HOST", "0.0.0.0")
+    PORT: int = int(os.getenv("RAG_WORKER_PORT") or os.getenv("PORT", "7860"))
     
     # LLM CONFIGURATION
     
     # Multi-key configuration
-    GEMINI_API_KEY_1: str = os.getenv("GEMINI_API_KEY_1", os.getenv("GEMINI_API_KEY", "NO_API_KEY"))
+    GEMINI_API_KEY_1: str = os.getenv("GEMINI_API_KEY_1") or os.getenv("GEMINI_API_KEY", "NO_API_KEY")
     GEMINI_API_KEY_2: str = os.getenv("GEMINI_API_KEY_2", "")
     GEMINI_API_KEY_3: str = os.getenv("GEMINI_API_KEY_3", "")
     GEMINI_API_KEY_4: str = os.getenv("GEMINI_API_KEY_4", "")
@@ -60,7 +60,7 @@ class Config:
     GEMINI_API_KEY_24: str = os.getenv("GEMINI_API_KEY_24", "")
     GEMINI_API_KEY_25: str = os.getenv("GEMINI_API_KEY_25", "")
     
-    GROQ_API_KEY_1: str = os.getenv("GROQ_API_KEY_1", "")
+    GROQ_API_KEY_1: str = os.getenv("GROQ_API_KEY_1") or os.getenv("GROQ_API_KEY", "")
     GROQ_API_KEY_2: str = os.getenv("GROQ_API_KEY_2", "")
     GROQ_API_KEY_3: str = os.getenv("GROQ_API_KEY_3", "")
     GROQ_API_KEY_4: str = os.getenv("GROQ_API_KEY_4", "")
@@ -139,7 +139,9 @@ class Config:
     RELEVANCE_THRESHOLD: float = float(os.getenv("RELEVANCE_THRESHOLD", "0.255")) 
     
     # PLATFORM CONFIGURATION
-    PLATFORM: str = os.getenv("PLATFORM", "local")  # vercel, railway, huggingface, or local
+    PLATFORM: str = os.getenv(
+        "PLATFORM", "huggingface" if os.getenv("HF_SPACE_ID") or os.getenv("SPACE_ID") else "local"
+    )
     
     # PERFORMANCE CONFIGURATION
     MAX_CONCURRENT_REQUESTS: int = int(os.getenv("MAX_CONCURRENT_REQUESTS", "25"))

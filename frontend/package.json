@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbo",
-    "build": "next build",
-    "start": "next start",
+    "dev": "node scripts/next.mjs dev --turbo",
+    "build": "node scripts/next.mjs build",
+    "start": "node scripts/next.mjs start",
     "lint": "eslint",
     "mcp:playwright": "npx @playwright/mcp@latest --port 8001 --host 0.0.0.0",
     "mcp:computer": "uv --directory C:\\Users\\avina\\Projects\\RVCE\\2025\\windows-mcp run main.py",

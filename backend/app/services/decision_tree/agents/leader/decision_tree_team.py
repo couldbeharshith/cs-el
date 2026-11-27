@@ -5,8 +5,6 @@ from agno.models.openai import OpenAIChat
 from agno.team.team import Team
 from ..models.topic_models import TopicRequest, TopicBatchRequest, TopicResult, BatchResult
 from ..workers.decision_tree_worker import DecisionTreeWorkerAgent
-from dotenv import load_dotenv
-load_dotenv()
 
 
 

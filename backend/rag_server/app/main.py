@@ -30,11 +30,13 @@ from app.utils import (
     log_performance_metrics,
 )
 
-if not logging.getLogger().handlers:
-    logging.basicConfig(
-        level=getattr(logging, Config.LOG_LEVEL), format=Config.LOG_FORMAT
-    )
 logger = logging.getLogger(__name__)
+if not logging.getLogger().handlers:
+    try:
+        logging.basicConfig(level=Config.LOG_LEVEL, format=Config.LOG_FORMAT)
+    except ValueError as exc:
+        logging.basicConfig(level=logging.INFO)
+        logger.warning("Invalid logging configuration, using defaults: %s", exc)
 
 # Get application settings from Config
 app_name = Config.APP_NAME

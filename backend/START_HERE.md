@@ -114,21 +114,20 @@ python server.py
 ## Configuration
 
 ### RAG API Key
-Set your RAG API key in `backend/.env`:
+Copy [the shared template](../.env.example) to `.env` at the repository root and set the shared bearer token:
 ```
 RAG_API_KEY=your_bearer_token_here
 ```
 
-This key is used by both the Main RAG API (port 8000) and RAG MCP Server (port 8001) to authenticate with the Insurance RAG API (port 7860).
+The Main RAG API (port 8000) and RAG MCP Server (port 8001) use this token to authenticate with the Insurance RAG API (port 7860).
 
 ### Insurance RAG Server
-Configure the Insurance RAG server in `backend/rag_server/.env.rag`:
-- Gemini API keys (1-25)
-- Groq API keys (1-15)
+Configure the Insurance RAG server in the same root `.env`:
+- Gemini and Groq API keys, with optional numbered keys for rotation
 - Pinecone configuration
 - Model settings and parameters
 
-See `backend/rag_server/.env.template` for all available options.
+See [the worker configuration](rag_server/app/config.py) for all available options.
 
 ## Dependencies
 

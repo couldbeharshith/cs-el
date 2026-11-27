@@ -1,11 +1,11 @@
-from pathlib import Path
-
-import httpx
-from dotenv import load_dotenv
 import os
 
+import httpx
 
-load_dotenv(Path(__file__).resolve().parents[1] / ".env")
+from env_config import load_root_env
+
+
+load_root_env()
 DEFAULT_URL = "http://localhost:7860/api/v1/hackrx/run"
 
 

@@ -1,10 +1,12 @@
 import os
-from dotenv import load_dotenv
 from pathlib import Path
 
-# Load environment variables from .env.screener file
-env_path = Path(__file__).parent / '.env.screener'
-load_dotenv(dotenv_path=env_path)
+from dotenv import load_dotenv
+
+
+backend_dir = Path(__file__).resolve().parent.parent
+if backend_dir.name == "backend":
+    load_dotenv(backend_dir.parent / ".env")
 
 email = os.getenv("SCREENER_EMAIL", "")
 password = os.getenv("SCREENER_PASSWORD", "")

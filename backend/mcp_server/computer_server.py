@@ -6,7 +6,11 @@ import tempfile
 import time
 import asyncio
 
+from env_config import load_root_env
+
+
 # Computer/Notepad MCP Server on port 8002
+load_root_env()
 COMPUTER_MCP_PORT = int(os.getenv("COMPUTER_MCP_PORT", "8002"))
 
 mcp = FastMCP("computer-server")

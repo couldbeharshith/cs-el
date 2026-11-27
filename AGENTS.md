@@ -20,4 +20,4 @@ Run `npm run lint`, `npm run typecheck`, and `npm run build` from `frontend/`. E
 
 Use Python 3.12 for backend work. Run backend checks from the owning service directory. `backend/test_api.py` and `backend/screener_server/test_api.py` are live smoke scripts. Run them against the intended environment with explicit integration credentials. Use the browser fixtures from [frontend/README.md](frontend/README.md#browser-tests) and the gateway suite from [backend/README.md](backend/README.md#gateway-and-document-mcp) for repeatable tests.
 
-Keep secrets in service-local environment files. The default application identity is shared in demo mode. Use isolated projects and synthetic data for development and browser tests. Keep the Windows computer MCP on a trusted local machine.
+Keep local secrets in the ignored repository-root `.env`. The default application identity is shared in demo mode. Use isolated projects and synthetic data for development and browser tests. Keep the Windows computer MCP on a trusted local machine.

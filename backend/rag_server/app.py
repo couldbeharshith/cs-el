@@ -9,9 +9,6 @@ import sys
 # Add the app directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'app'))
 
-# Set platform environment variable for Hugging Face Spaces
-os.environ.setdefault('PLATFORM', 'huggingface')
-
 # Import and run the FastAPI app
 from app.main import app
 
