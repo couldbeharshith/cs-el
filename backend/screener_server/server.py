@@ -31,18 +31,28 @@ driver_lock = Lock()
 driver = None
 
 
+def close_browser():
+    global driver
+    active, driver = driver, None
+    if active is not None:
+        with suppress(WebDriverException):
+            active.quit()
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global driver
-    yield
-    with driver_lock:
-        if driver is not None:
-            with suppress(WebDriverException):
-                driver.quit()
-            driver = None
-    if _query_service.cache_info().currsize:
-        _query_service().client.close()
-        _query_service.cache_clear()
+    try:
+        yield
+    finally:
+        try:
+            with driver_lock:
+                close_browser()
+        finally:
+            if _query_service.cache_info().currsize:
+                try:
+                    _query_service().client.close()
+                finally:
+                    _query_service.cache_clear()
 
 
 app = FastAPI(title="Unified Screener API", version="1.0.0", lifespan=lifespan)
@@ -76,10 +86,7 @@ def browser():
             yield driver
         except WebDriverException as exc:
             logger.warning("Screener browser operation failed", exc_info=exc)
-            if driver is not None:
-                with suppress(WebDriverException):
-                    driver.quit()
-                driver = None
+            close_browser()
             raise HTTPException(502, "Screener browser operation failed") from exc
 
 

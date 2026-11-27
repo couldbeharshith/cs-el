@@ -1,4 +1,7 @@
+from contextlib import suppress
+
 import undetected_chromedriver as uc
+from selenium.common.exceptions import WebDriverException
 from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.support import expected_conditions as EC
@@ -30,7 +33,8 @@ def sign_in(driver):
         WebDriverWait(driver, 15).until(EC.url_changes(login_url))
         return driver
     except Exception:
-        driver.quit()
+        with suppress(WebDriverException):
+            driver.quit()
         raise
 
 
