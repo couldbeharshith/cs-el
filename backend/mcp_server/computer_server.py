@@ -457,7 +457,11 @@ async def list_files(directory: str, extension: Optional[str] = None) -> dict:
         }
 
 
-def run_server(port: int = None):
+def create_http_app():
+    return mcp.http_app(path="/mcp", transport="streamable-http")
+
+
+def run_server(port: int | None = None):
     """Run the computer MCP server."""
     server_port = port or COMPUTER_MCP_PORT
     print(f"Starting Computer MCP Server on port {server_port}...")

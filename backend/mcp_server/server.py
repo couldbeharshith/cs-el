@@ -18,5 +18,9 @@ async def process_document_rag(document_url: str, questions: str | list[str]) ->
     return {"success": True, "answers": result["answers"], "document_url": document_url}
 
 
+def create_http_app():
+    return mcp.http_app(path="/mcp", transport="streamable-http")
+
+
 def run_server(port: int | None = None):
     mcp.run(transport="streamable-http", port=port or MCP_SERVER_PORT)
